@@ -28,7 +28,7 @@ import android.widget.EditText;
 public class SRV1Settings extends Activity {
 	public static final String SRV1_SETTINGS = "SRV1_SETTINGS";
 	public static final String DEFAULT_SERVER = "default_server";
-	
+
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
@@ -36,15 +36,16 @@ public class SRV1Settings extends Activity {
 		getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
 				WindowManager.LayoutParams.FLAG_FULLSCREEN);
 		setContentView(R.layout.srv1settings);
-		
-		SharedPreferences settings = getSharedPreferences(SRV1Settings.SRV1_SETTINGS, 0);
-		EditText server_field = (EditText) findViewById(R.id.server_field);
-		server_field.setText(settings.getString(SRV1Settings.DEFAULT_SERVER, getString(R.string.default_server)));
 
-		
+		SharedPreferences settings = getSharedPreferences(
+				SRV1Settings.SRV1_SETTINGS, 0);
+		EditText server_field = (EditText) findViewById(R.id.server_field);
+		server_field.setText(settings.getString(SRV1Settings.DEFAULT_SERVER,
+				getString(R.string.default_server)));
+
 		Button revertButton = (Button) findViewById(R.id.revert_button);
 		revertButton.setOnClickListener(revertButtonListener);
-		
+
 		Button saveButton = (Button) findViewById(R.id.save_button);
 		saveButton.setOnClickListener(saveButtonListener);
 	}
@@ -53,20 +54,25 @@ public class SRV1Settings extends Activity {
 
 		public void onClick(View view) {
 			EditText server_field = (EditText) findViewById(R.id.server_field);
-			SharedPreferences settings = getSharedPreferences(SRV1Settings.SRV1_SETTINGS, 0);
-			server_field.setText(settings.getString(SRV1Settings.DEFAULT_SERVER, getString(R.string.default_server)));
+			SharedPreferences settings = getSharedPreferences(
+					SRV1Settings.SRV1_SETTINGS, 0);
+			server_field.setText(settings.getString(
+					SRV1Settings.DEFAULT_SERVER,
+					getString(R.string.default_server)));
 		}
 
 	};
-	
+
 	private OnClickListener saveButtonListener = new OnClickListener() {
 
 		public void onClick(View view) {
-			SharedPreferences settings = getSharedPreferences(SRV1Settings.SRV1_SETTINGS, 0);
-		    SharedPreferences.Editor editor = settings.edit();
+			SharedPreferences settings = getSharedPreferences(
+					SRV1Settings.SRV1_SETTINGS, 0);
+			SharedPreferences.Editor editor = settings.edit();
 			EditText server_field = (EditText) findViewById(R.id.server_field);
-			editor.putString(SRV1Settings.DEFAULT_SERVER, server_field.getText().toString());
-		    editor.commit();
+			editor.putString(SRV1Settings.DEFAULT_SERVER, server_field
+					.getText().toString());
+			editor.commit();
 			finish();
 		}
 

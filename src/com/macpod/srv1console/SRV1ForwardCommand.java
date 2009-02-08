@@ -24,7 +24,7 @@ public class SRV1ForwardCommand extends SRV1Command {
 
 	public boolean process(DataInputStream in, DataOutputStream out)
 			throws Exception {
-		
+
 		// Clear input stream in case there is data present.
 		clearInputStream(in);
 
@@ -32,7 +32,7 @@ public class SRV1ForwardCommand extends SRV1Command {
 		out.writeByte('8');
 
 		// Verify that robot went forward.
-		if ((char)in.readByte() == '#' && (char)in.readByte() == '8') {
+		if ((char) in.readByte() == '#' && (char) in.readByte() == '8') {
 			Log.d("SRV1", "Robot went forwards!");
 			return true;
 		}

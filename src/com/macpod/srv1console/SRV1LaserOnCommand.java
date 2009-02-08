@@ -24,7 +24,7 @@ public class SRV1LaserOnCommand extends SRV1Command {
 
 	public boolean process(DataInputStream in, DataOutputStream out)
 			throws Exception {
-		
+
 		// Clear input stream in case there is data present.
 		clearInputStream(in);
 
@@ -32,7 +32,7 @@ public class SRV1LaserOnCommand extends SRV1Command {
 		out.writeByte('l');
 
 		// Verify lasers were turned on.
-		if ((char)in.readByte() == '#' && (char)in.readByte() == 'l') {
+		if ((char) in.readByte() == '#' && (char) in.readByte() == 'l') {
 			Log.d("SRV1", "Turned on lasers!");
 			return true;
 		}
