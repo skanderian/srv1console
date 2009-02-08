@@ -1,0 +1,59 @@
+package com.macpod.srv1console;
+
+import android.app.Activity;
+import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
+import android.os.Bundle;
+import android.view.View;
+import android.view.WindowManager;
+import android.view.View.OnClickListener;
+import android.widget.Button;
+import android.widget.EditText;
+
+public class SRV1Settings extends Activity {
+	public static final String SRV1_SETTINGS = "SRV1_SETTINGS";
+	public static final String DEFAULT_SERVER = "default_server";
+	
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+
+		setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+		getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+				WindowManager.LayoutParams.FLAG_FULLSCREEN);
+		setContentView(R.layout.srv1settings);
+		
+		SharedPreferences settings = getSharedPreferences(SRV1Settings.SRV1_SETTINGS, 0);
+		EditText server_field = (EditText) findViewById(R.id.server_field);
+		server_field.setText(settings.getString(SRV1Settings.DEFAULT_SERVER, getString(R.string.default_server)));
+
+		
+		Button revertButton = (Button) findViewById(R.id.revert_button);
+		revertButton.setOnClickListener(revertButtonListener);
+		
+		Button saveButton = (Button) findViewById(R.id.save_button);
+		saveButton.setOnClickListener(saveButtonListener);
+	}
+
+	private OnClickListener revertButtonListener = new OnClickListener() {
+
+		public void onClick(View view) {
+			EditText server_field = (EditText) findViewById(R.id.server_field);
+			SharedPreferences settings = getSharedPreferences(SRV1Settings.SRV1_SETTINGS, 0);
+			server_field.setText(settings.getString(SRV1Settings.DEFAULT_SERVER, getString(R.string.default_server)));
+		}
+
+	};
+	
+	private OnClickListener saveButtonListener = new OnClickListener() {
+
+		public void onClick(View view) {
+			SharedPreferences settings = getSharedPreferences(SRV1Settings.SRV1_SETTINGS, 0);
+		    SharedPreferences.Editor editor = settings.edit();
+			EditText server_field = (EditText) findViewById(R.id.server_field);
+			editor.putString(SRV1Settings.DEFAULT_SERVER, server_field.getText().toString());
+		    editor.commit();
+			finish();
+		}
+
+	};
+}

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:keepScreenOn="true"
+    android:padding="0dip">
+    
+	<ImageView android:id="@+id/video_view"
+		android:layout_width="320px"
+        android:layout_height="240px"
+        android:layout_centerInParent="true"/>
+        
+    <ImageView android:id="@+id/left_bar"
+		android:layout_width="5px"
+		android:layout_height="480px"		
+		android:layout_alignParentLeft="true"/>
+		
+    <ImageView android:id="@+id/right_bar"
+		android:layout_width="5px"
+		android:layout_height="480px"		
+		android:layout_alignParentRight="true"/>
+		
+    <ImageView android:id="@+id/top_bar"
+		android:layout_width="640px"
+		android:layout_height="5px"		
+		android:layout_alignParentTop="true"/>
+
+    <ImageView android:id="@+id/bottom_bar"
+		android:layout_width="640px"
+		android:layout_height="5px"		
+		android:layout_alignParentBottom="true"/>				
+		
+     <Button
+        android:id="@+id/laser_on_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true" 
+        android:text="LaserOn"/>
+     <Button
+        android:id="@+id/laser_off_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true" 
+        android:text="LaserOff"/>     
+        
+     <Button
+        android:id="@+id/s1_1_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@id/laser_on_button"
+        android:text="S1 1"/>  
+        
+     <Button
+        android:id="@+id/s1_2_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@id/s1_1_button"
+        android:text="S1 2"/>          
+
+    <Button
+        android:id="@+id/s2_1_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_below="@id/laser_off_button"
+        android:text="S2 1"/>  
+        
+     <Button
+        android:id="@+id/s2_2_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_below="@id/s2_1_button"
+        android:text="S2 2"/> 
+
+</RelativeLayout>
+
