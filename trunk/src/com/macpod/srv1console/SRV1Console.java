@@ -112,7 +112,6 @@ public class SRV1Console extends Activity {
 		}
 	};
 
-
 	private OnClickListener s1_2ButtonListener = new OnClickListener() {
 
 		public void onClick(View view) {

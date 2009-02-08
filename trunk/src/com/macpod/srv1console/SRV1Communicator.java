@@ -98,13 +98,13 @@ public class SRV1Communicator {
 				while (true) { // Read and display images as fast as possible.
 					// Wait for, then take next command in queue.
 					SRV1Command command = commandQueue.take();
-					//Log.d("SRV1", "Running a command.");
+					// Log.d("SRV1", "Running a command.");
 					// Run the command once, more if it needs to because it
 					// failed.
 					do {
 						results = command.process(in, out);
 					} while (results == false && command.repeatOnFail());
-					//Log.d("SRV1", "Done running a command");
+					// Log.d("SRV1", "Done running a command");
 					// Add it back if it should be repeated.
 					if (command.repeat()) {
 						commandQueue.put(command);

@@ -44,15 +44,14 @@ public class SRV1VideoCommand extends SRV1Command {
 		// Clear input stream in case there is data present.
 		clearInputStream(in);
 
-		
 		// Request an image frame.
 		while (in.available() == 0) {
 			out.writeByte('I');
 		}
-		
+
 		if (!goodHeader(in))
 			return false;
-		
+
 		int imageSize = readImageSize(in);
 
 		if (imageSize <= 0) { // Make sure it is a sane image size.
@@ -65,8 +64,8 @@ public class SRV1VideoCommand extends SRV1Command {
 			byte[] tempStorage = new byte[imageSize];
 
 			if (tempData == null || tempStorage == null) { // Assume the size
-															// was bogus (and
-															// that we
+				// was bogus (and
+				// that we
 				// didn't run out of memory)
 				clearInputStream(in);
 				return false;
@@ -79,7 +78,8 @@ public class SRV1VideoCommand extends SRV1Command {
 		readData(in, imageSize);
 
 		// Stick it in a bitmap.
-		video.putFrame(BitmapFactory.decodeByteArray(data, 0, imageSize, factory_options));
+		video.putFrame(BitmapFactory.decodeByteArray(data, 0, imageSize,
+				factory_options));
 
 		// Display the image
 		try {
@@ -108,13 +108,13 @@ public class SRV1VideoCommand extends SRV1Command {
 		}
 		return true;
 	}
-	
+
 	private int readImageSize(DataInputStream in) throws Exception {
 		// Read the size of the image
 		return 0 | in.readUnsignedByte() | in.readUnsignedByte() << 8
 				| in.readUnsignedByte() << 16 | in.readUnsignedByte() << 24;
 	}
-	
+
 	private void readData(DataInputStream in, int byteCount) throws Exception {
 		int bytesRead = 0;
 		int bytesToRead = byteCount;
