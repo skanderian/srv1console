@@ -20,57 +20,38 @@ import java.io.DataOutputStream;
 
 import android.util.Log;
 
-public class SRV1DirectMotorControlCommand extends SRV1Command {
+public class SRV1Servo2Command extends SRV1Command {
 	public static final int MAX_FORWARD_SPEED = 100;
-	public static final int MIN_FORWARD_SPEED = 1;
-	public static final int STOP_SPEED = 0;
-	public static final int MIN_REVERSE_SPEED = -1;
-	public static final int MAX_REVERSE_SPEED = -100;
-	public static final int MIN_DURATION = 1;
-	public static final int MAX_DURATION = 255;
-	public static final int INFINITE_DURATION = 0;
+	public static final int STOP_SPEED = 50;
+	public static final int MAX_REVERSE_SPEED = 0;
 
-	byte leftMotor = STOP_SPEED;
-	byte rightMotor = STOP_SPEED;
-	byte duration = INFINITE_DURATION;
+	byte leftServo = STOP_SPEED;
+	byte rightServo = STOP_SPEED;
 
-	public SRV1DirectMotorControlCommand(byte leftMotor, byte rightMotor, byte duration) {
-		this.duration = duration;
-		this.leftMotor = leftMotor;
-		this.rightMotor = rightMotor;
+	public SRV1Servo2Command(byte leftServo, byte rightServo) {
+		this.leftServo = leftServo;
+		this.rightServo = rightServo;
 	}
-
-	/*public boolean setControls(byte leftMotor, byte rightMotor,
-			byte duration) {
-			this.duration = duration;
-			this.leftMotor = leftMotor;
-			this.rightMotor = rightMotor;
-			return true;
-		}
-		return false;
-	}*/
 
 	public boolean process(DataInputStream in, DataOutputStream out)
 			throws Exception {
 		// Clear input stream in case there is data present.
 		clearInputStream(in);
 
-		// Write bytes to control the motor.
-		out.writeByte('M');
+		// Write bytes to control the Servo.
+		out.writeByte('s');
 
-		// Write left motor byte
-		out.writeByte(leftMotor);
-		// Write right motor byte
-		out.writeByte(rightMotor);
-		// Write duration byte
-		out.writeByte(duration);
+		// Write left Servo byte
+		out.writeByte(leftServo);
+		// Write right Servo byte
+		out.writeByte(rightServo);
 
 		// Verify unit recieved the request.
-		if ((char) in.readByte() == '#' && (char) in.readByte() == 'M') {
-			Log.d("SRV1", "Controlled motors!");
+		if ((char) in.readByte() == '#' && (char) in.readByte() == 's') {
+			Log.d("SRV1", "Controlled servo2 bank!");
 			return true;
 		}
-		Log.d("SRV1", "Could not control motors!");
+		Log.d("SRV1", "Could not control servo2 bank!");
 		return false;
 
 	}
