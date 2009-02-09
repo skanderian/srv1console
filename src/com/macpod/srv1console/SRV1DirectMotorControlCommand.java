@@ -40,16 +40,6 @@ public class SRV1DirectMotorControlCommand extends SRV1Command {
 		this.rightMotor = rightMotor;
 	}
 
-	/*public boolean setControls(byte leftMotor, byte rightMotor,
-			byte duration) {
-			this.duration = duration;
-			this.leftMotor = leftMotor;
-			this.rightMotor = rightMotor;
-			return true;
-		}
-		return false;
-	}*/
-
 	public boolean process(DataInputStream in, DataOutputStream out)
 			throws Exception {
 		// Clear input stream in case there is data present.
