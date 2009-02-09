@@ -218,30 +218,39 @@ public class SRV1Console extends Activity {
 		drawTiltBorder(xTilt, yTilt);
 		if (xTilt == DIR_NONE && yTilt == DIR_NONE) {
 			Log.d("SRV1", "Stopped");
-			// Add command here
+			SRV1Command command = new SRV1DirectMotorControlCommand((byte)0, (byte)0, (byte)0);
+			communicator.putCommand(command);
 		} else if (xTilt == DIR_NONE && yTilt == DIR_RIGHT) {
 			Log.d("SRV1", "Right");
-			// Add command here
+			SRV1Command command = new SRV1DirectMotorControlCommand((byte)40, (byte)-40, (byte)0);
+			communicator.putCommand(command);
 		} else if (xTilt == DIR_NONE && yTilt == DIR_LEFT) {
 			Log.d("SRV1", "Left");
-			// Add command here
+			SRV1Command command = new SRV1DirectMotorControlCommand((byte)-40, (byte)40, (byte)0);
+			communicator.putCommand(command);
 		} else if (xTilt == DIR_FORWARD && yTilt == DIR_NONE) {
 			Log.d("SRV1", "Forward");
-			// Add command here
+			SRV1Command command = new SRV1DirectMotorControlCommand((byte)40, (byte)40, (byte)0);
+			communicator.putCommand(command);
 		} else if (xTilt == DIR_FORWARD && yTilt == DIR_RIGHT) {
 			Log.d("SRV1", "Forward - right");
-			// Add command here
+			SRV1Command command = new SRV1DirectMotorControlCommand((byte)48, (byte)24, (byte)0);
+			communicator.putCommand(command);
 		} else if (xTilt == DIR_FORWARD && yTilt == DIR_LEFT) {
 			Log.d("SRV1", "Forward - left");
-			// Add command here
+			SRV1Command command = new SRV1DirectMotorControlCommand((byte)24, (byte)48, (byte)0);
+			communicator.putCommand(command);
 		} else if (xTilt == DIR_REVERSE && yTilt == DIR_NONE) {
 			Log.d("SRV1", "Reverse");
-			// Add command here
+			SRV1Command command = new SRV1DirectMotorControlCommand((byte)-40, (byte)-40, (byte)0);
+			communicator.putCommand(command);
 		} else if (xTilt == DIR_REVERSE && yTilt == DIR_RIGHT) {
 			Log.d("SRV1", "Reverse - right");
-			// Add command here
+			SRV1Command command = new SRV1DirectMotorControlCommand((byte)-48, (byte)-24, (byte)0);
+			communicator.putCommand(command);
 		} else if (xTilt == DIR_REVERSE && yTilt == DIR_LEFT) {
-			// Add command here
+			SRV1Command command = new SRV1DirectMotorControlCommand((byte)-24, (byte)-48, (byte)0);
+			communicator.putCommand(command);
 		}
 	}
 
