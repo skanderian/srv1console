@@ -15,11 +15,7 @@
 
 package com.macpod.srv1console;
 
-/*
- * 
- * g1 has a screen size of 480 x 320
- * can transmit 1 = 80x64, 3 = 160x120, 5 = 320x240,
- */
+
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -215,43 +211,48 @@ public class SRV1Console extends Activity {
 	};
 
 	public void reactToTilt(int xTilt, int yTilt) {
+		SRV1DirectMotorControlCommand command = null;
 		drawTiltBorder(xTilt, yTilt);
 		if (xTilt == DIR_NONE && yTilt == DIR_NONE) {
 			Log.d("SRV1", "Stopped");
-			SRV1Command command = new SRV1DirectMotorControlCommand((byte)0, (byte)0, (byte)0);
-			communicator.putCommand(command);
+			command = new SRV1DirectMotorControlCommand();
+			command.setStop();
 		} else if (xTilt == DIR_NONE && yTilt == DIR_RIGHT) {
 			Log.d("SRV1", "Right");
-			SRV1Command command = new SRV1DirectMotorControlCommand((byte)40, (byte)-40, (byte)0);
-			communicator.putCommand(command);
+			command = new SRV1DirectMotorControlCommand();
+			command.setRight();
 		} else if (xTilt == DIR_NONE && yTilt == DIR_LEFT) {
 			Log.d("SRV1", "Left");
-			SRV1Command command = new SRV1DirectMotorControlCommand((byte)-40, (byte)40, (byte)0);
-			communicator.putCommand(command);
+			command = new SRV1DirectMotorControlCommand();
+			command.setLeft();
 		} else if (xTilt == DIR_FORWARD && yTilt == DIR_NONE) {
 			Log.d("SRV1", "Forward");
-			SRV1Command command = new SRV1DirectMotorControlCommand((byte)40, (byte)40, (byte)0);
-			communicator.putCommand(command);
+			command = new SRV1DirectMotorControlCommand();
+			command.setForward();
 		} else if (xTilt == DIR_FORWARD && yTilt == DIR_RIGHT) {
 			Log.d("SRV1", "Forward - right");
-			SRV1Command command = new SRV1DirectMotorControlCommand((byte)48, (byte)24, (byte)0);
-			communicator.putCommand(command);
+			command = new SRV1DirectMotorControlCommand();
+			command.setForwardRightDrift();
 		} else if (xTilt == DIR_FORWARD && yTilt == DIR_LEFT) {
 			Log.d("SRV1", "Forward - left");
-			SRV1Command command = new SRV1DirectMotorControlCommand((byte)24, (byte)48, (byte)0);
-			communicator.putCommand(command);
+			command = new SRV1DirectMotorControlCommand();
+			command.setForwardLeftDrift();
 		} else if (xTilt == DIR_REVERSE && yTilt == DIR_NONE) {
 			Log.d("SRV1", "Reverse");
-			SRV1Command command = new SRV1DirectMotorControlCommand((byte)-40, (byte)-40, (byte)0);
-			communicator.putCommand(command);
+			command = new SRV1DirectMotorControlCommand();
+			command.setReverse();
 		} else if (xTilt == DIR_REVERSE && yTilt == DIR_RIGHT) {
 			Log.d("SRV1", "Reverse - right");
-			SRV1Command command = new SRV1DirectMotorControlCommand((byte)-48, (byte)-24, (byte)0);
-			communicator.putCommand(command);
+			command = new SRV1DirectMotorControlCommand();
+			command.setReverseRightDrift();
 		} else if (xTilt == DIR_REVERSE && yTilt == DIR_LEFT) {
-			SRV1Command command = new SRV1DirectMotorControlCommand((byte)-24, (byte)-48, (byte)0);
-			communicator.putCommand(command);
+			Log.d("SRV1", "Reverse -left");
+			command = new SRV1DirectMotorControlCommand();
+			command.setReverseLeftDrift();
 		}
+
+		if (command != null)
+			communicator.putCommand(command);
 	}
 
 	// Everything about how this border is made is awful.

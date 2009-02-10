@@ -21,23 +21,86 @@ import java.io.DataOutputStream;
 import android.util.Log;
 
 public class SRV1DirectMotorControlCommand extends SRV1Command {
-	public static final int MAX_FORWARD_SPEED = 100;
-	public static final int MIN_FORWARD_SPEED = 1;
-	public static final int STOP_SPEED = 0;
-	public static final int MIN_REVERSE_SPEED = -1;
-	public static final int MAX_REVERSE_SPEED = -100;
-	public static final int MIN_DURATION = 1;
-	public static final int MAX_DURATION = 255;
-	public static final int INFINITE_DURATION = 0;
+	public static final byte MAX_FORWARD_SPEED = 100;
+	public static final byte MIN_FORWARD_SPEED = 1;
+	public static final byte STOP_SPEED = 0;
+	public static final byte MIN_REVERSE_SPEED = -1;
+	public static final byte MAX_REVERSE_SPEED = -100;
+	public static final int MIN_DURATION = 1; // = 1 * 10ms = 10ms
+	public static final int MAX_DURATION = 255; // = 255 * 10ms = 2550ms
+	public static final byte INFINITE_DURATION = 0;
 
-	byte leftMotor = STOP_SPEED;
-	byte rightMotor = STOP_SPEED;
-	byte duration = INFINITE_DURATION;
+	public static final byte DEFAULT_FORWARD_SPEED = 40;
+	public static final byte DEFAULT_REVERSE_SPEED = -40;
+	public static final byte DEFAULT_FORWARD_STRONG_DRIFT = 48;
+	public static final byte DEFAULT_FORWARD_WEAK_DRIFT = 24;
+	public static final byte DEFAULT_REVERSE_STRONG_DRIFT = -48;
+	public static final byte DEFAULT_REVERSE_WEAK_DRIFT = -24;
 
-	public SRV1DirectMotorControlCommand(byte leftMotor, byte rightMotor, byte duration) {
+	private byte leftMotor = STOP_SPEED;
+	private byte rightMotor = STOP_SPEED;
+	private int duration = INFINITE_DURATION;
+
+	public boolean setControls(byte leftMotor, byte rightMotor, byte duration) {
+		// Set to stop if a bogus values were sent in. It's better to stop then
+		// fall off a table!
+		if (duration > MAX_DURATION || leftMotor > MAX_FORWARD_SPEED
+				|| leftMotor < MAX_REVERSE_SPEED
+				|| rightMotor > MAX_FORWARD_SPEED
+				|| rightMotor < MAX_REVERSE_SPEED) {
+
+			duration = INFINITE_DURATION;
+			leftMotor = STOP_SPEED;
+			rightMotor = STOP_SPEED;
+			return false;
+		}
 		this.duration = duration;
 		this.leftMotor = leftMotor;
 		this.rightMotor = rightMotor;
+		return true;
+	}
+
+	public void setStop() {
+		setControls(STOP_SPEED, STOP_SPEED, INFINITE_DURATION);
+	}
+
+	public void setRight() {
+		setControls(DEFAULT_FORWARD_SPEED, DEFAULT_REVERSE_SPEED,
+				INFINITE_DURATION);
+	}
+
+	public void setLeft() {
+		setControls(DEFAULT_REVERSE_SPEED, DEFAULT_FORWARD_SPEED,
+				INFINITE_DURATION);
+	}
+
+	public void setForward() {
+		setControls(DEFAULT_FORWARD_SPEED, DEFAULT_FORWARD_SPEED,
+				INFINITE_DURATION);
+	}
+
+	public void setForwardRightDrift() {
+		setControls(DEFAULT_FORWARD_STRONG_DRIFT, DEFAULT_FORWARD_WEAK_DRIFT,
+				INFINITE_DURATION);
+	}
+
+	public void setForwardLeftDrift() {
+		setControls(DEFAULT_FORWARD_WEAK_DRIFT, DEFAULT_FORWARD_STRONG_DRIFT,
+				INFINITE_DURATION);
+	}
+
+	public void setReverse() {
+		setControls(DEFAULT_REVERSE_SPEED, DEFAULT_REVERSE_SPEED,
+				INFINITE_DURATION);
+	}
+
+	public void setReverseRightDrift() {
+		setControls(DEFAULT_REVERSE_STRONG_DRIFT, DEFAULT_REVERSE_WEAK_DRIFT,
+				INFINITE_DURATION);
+	}
+
+	public void setReverseLeftDrift() {
+		setControls(DEFAULT_FORWARD_WEAK_DRIFT, DEFAULT_REVERSE_STRONG_DRIFT, INFINITE_DURATION);
 	}
 
 	public boolean process(DataInputStream in, DataOutputStream out)
