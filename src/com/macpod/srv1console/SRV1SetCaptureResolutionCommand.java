@@ -21,11 +21,11 @@ import java.io.DataOutputStream;
 import android.util.Log;
 
 public class SRV1SetCaptureResolutionCommand extends SRV1Command {
-	public enum CaptureResolution {
+	public static enum CaptureResolution {
 		RES160x120, RES320x240, RES640x480, RES1280x1024
 	}
 
-	char resolution;
+	private char resolution;
 
 	public SRV1SetCaptureResolutionCommand(CaptureResolution res) {
 		switch (res) {

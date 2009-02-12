@@ -19,23 +19,26 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
 import android.graphics.BitmapFactory;
+import android.graphics.Bitmap.Config;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 
 public class SRV1VideoCommand extends SRV1Command {
-	int dataSize = 16000;
-	byte[] data = new byte[dataSize];
-	int tempSpaceSize = 16000;
-	byte[] storage = new byte[tempSpaceSize];
-	BitmapFactory.Options factory_options = new BitmapFactory.Options();
-	SRV1Video video;
-	Handler interface_handler;
+	private int dataSize = 16000;
+	private byte[] data = new byte[dataSize];
+	private int tempSpaceSize = 16000;
+	private byte[] storage = new byte[tempSpaceSize];
+	private BitmapFactory.Options factory_options = new BitmapFactory.Options();
+	private SRV1Video video;
+	private Handler interface_handler;
 
 	public SRV1VideoCommand(Handler interface_handler, SRV1Video video) {
 		this.interface_handler = interface_handler;
 		this.video = video;
 		factory_options.inTempStorage = storage;
+		factory_options.inDither = false;
+		factory_options.inPreferredConfig = Config.RGB_565;
 	}
 
 	public boolean process(DataInputStream in, DataOutputStream out)
