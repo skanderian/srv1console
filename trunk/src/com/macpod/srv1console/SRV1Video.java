@@ -16,19 +16,52 @@
 package com.macpod.srv1console;
 
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.ColorFilter;
+import android.graphics.drawable.Drawable;
 
-public class SRV1Video {
-	Bitmap frame = null;
+public class SRV1Video extends Drawable {
+	private Bitmap frame = null;
 
 	public SRV1Video() {
 	}
 
 	public void putFrame(Bitmap frame) {
-		if (frame != null)
-			this.frame = frame;
+		Bitmap temp;
+		if (frame == null)
+			return;
+
+		temp = this.frame;
+		this.frame = frame;
+		if (temp != null)
+			temp.recycle();
 	}
 
 	public Bitmap getFrame() {
 		return frame;
+	}
+
+	@Override
+	public void draw(Canvas canvas) {
+		if (frame != null)
+			canvas.drawBitmap(frame, 0.0f, 0.0f, null);
+	}
+
+	@Override
+	public int getOpacity() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public void setAlpha(int alpha) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void setColorFilter(ColorFilter cf) {
+		// TODO Auto-generated method stub
+
 	}
 }

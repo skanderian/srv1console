@@ -21,16 +21,26 @@ import java.io.DataOutputStream;
 import android.util.Log;
 
 public class SRV1Servo1Command extends SRV1Command {
-	public static final int MAX_FORWARD_SPEED = 100;
-	public static final int STOP_SPEED = 50;
-	public static final int MAX_REVERSE_SPEED = 0;
+	public static final int MAX_PWM = 100; // 2ms pulse
+	public static final int DEFAULT_PWM = 50; // 1.5ms pulse
+	public static final int MIN_PWM = 0; // 1ms pulse
 
-	byte leftServo = STOP_SPEED;
-	byte rightServo = STOP_SPEED;
+	private byte leftServo = DEFAULT_PWM;
+	private byte rightServo = DEFAULT_PWM;
 
-	public SRV1Servo1Command(byte leftServo, byte rightServo) {
-		this.leftServo = leftServo;
-		this.rightServo = rightServo;
+	public boolean setControls(int leftServo, int rightServo) {
+		// If the values are bogus, set both servos to their default positions.
+		if (leftServo < MIN_PWM || leftServo > MAX_PWM || rightServo < MIN_PWM
+				|| rightServo > MAX_PWM) {
+			leftServo = DEFAULT_PWM;
+			rightServo = DEFAULT_PWM;
+			return false;
+		}
+
+		this.leftServo = (byte) leftServo;
+		this.rightServo = (byte) rightServo;
+
+		return true;
 	}
 
 	public boolean process(DataInputStream in, DataOutputStream out)
@@ -51,7 +61,7 @@ public class SRV1Servo1Command extends SRV1Command {
 			Log.d("SRV1", "Controlled servo1 bank!");
 			return true;
 		}
-		Log.d("SRV1", "Could not control servo1 bank!");
+		Log.d("SRV1", "Could not control serv1 bank!");
 		return false;
 
 	}

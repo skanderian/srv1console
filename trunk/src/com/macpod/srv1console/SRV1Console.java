@@ -15,7 +15,6 @@
 
 package com.macpod.srv1console;
 
-
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -60,6 +59,8 @@ public class SRV1Console extends Activity {
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
 		setContentView(R.layout.srv1console);
+		ImageView iv = (ImageView) findViewById(R.id.video_view);
+		iv.setImageDrawable(video);
 
 		communicator = new SRV1Communicator();
 
@@ -104,14 +105,20 @@ public class SRV1Console extends Activity {
 	private OnClickListener s1_1ButtonListener = new OnClickListener() {
 
 		public void onClick(View view) {
-			// Do something
+			SRV1Servo2Command command = new SRV1Servo2Command();
+			command.setControls(SRV1Servo2Command.MIN_PWM,
+					SRV1Servo2Command.MIN_PWM);
+			communicator.putCommand(command);
 		}
 	};
 
 	private OnClickListener s1_2ButtonListener = new OnClickListener() {
 
 		public void onClick(View view) {
-			// Do something
+			SRV1Servo2Command command = new SRV1Servo2Command();
+			command.setControls(SRV1Servo2Command.MAX_PWM,
+					SRV1Servo2Command.MAX_PWM);
+			communicator.putCommand(command);
 		}
 	};
 
@@ -307,7 +314,7 @@ public class SRV1Console extends Activity {
 		// Log.d("SRV1", "Updating image!");
 		try {
 			ImageView iv = (ImageView) findViewById(R.id.video_view);
-			iv.setImageBitmap(video.getFrame());
+			iv.invalidate();
 		} catch (Exception e) {
 			// Ignore. Could be thrown because of a null bitmap or because
 			// the
