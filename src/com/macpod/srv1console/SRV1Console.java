@@ -22,6 +22,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -47,6 +48,7 @@ public class SRV1Console extends Activity {
 	private SRV1Communicator communicator = null;
 	private SRV1Video video = new SRV1Video();
 	private Menu optionsMenu = null;
+	private int motion_mode = SRV1Settings.MOTION_CONTROL_DEFAULT;
 
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -83,6 +85,15 @@ public class SRV1Console extends Activity {
 		s2_2Button.setOnClickListener(s2_2ButtonListener);
 
 		updateInterface();
+		loadSettings();
+	}
+
+	private void loadSettings() {
+		SharedPreferences settings = getSharedPreferences(
+				SRV1Settings.SRV1_SETTINGS, 0);
+
+		motion_mode = settings.getInt(SRV1Settings.MOTION__CONTROL_MODE,
+				SRV1Settings.MOTION_CONTROL_DEFAULT);
 	}
 
 	private OnClickListener laserOnButtonListener = new OnClickListener() {
@@ -174,18 +185,35 @@ public class SRV1Console extends Activity {
 		// Screen facing up is 0
 		// tilting unit away from you while in landscape mode yields positive #s
 		// tilting unit towards you while in landscape mode yields negative #s
-		private int baseX = -25;
+		private int xBase = -25;
 
 		// screen facing up is 0
 		// tilting unit to your left while in landscape mode yields positive #s
 		// tilting unit to your right while in landscape mode yields negative #s
-		private int baseY = 0;
+		private int yBase = 0;
 
+		// Store last measured tilt settings.
 		private int xTilt = DIR_NONE;
 		private int yTilt = DIR_NONE;
+		private byte leftMotor = SRV1DirectMotorControlCommand.STOP_SPEED;
+		private byte rightMotor = SRV1DirectMotorControlCommand.STOP_SPEED;
 
-		int xSensitivity = 10; // Degrees
-		int ySensitivity = 10;
+		private int xMinThreshold = 10; // Degrees
+		private int yMinThreshold = 10;
+
+		// Used for advanced motion control.
+		private int xMaxThreshold = 40; // Degrees
+		private int yMaxThreshold = 40;
+
+		private int motorTolerance = 5;
+		
+		private int cheapSlowdown = 0;
+		private int cheapSlowdownIncrement = 5;
+
+		private int map(int x, int in_min, int in_max, int out_min, int out_max) {
+			return (x - in_min) * (out_max - out_min) / (in_max - in_min)
+					+ out_min;
+		}
 
 		public void onAccuracyChanged(int sensor, int accuracy) {
 			Log.d("SRV1", "Sensor accuracty changed");
@@ -193,78 +221,184 @@ public class SRV1Console extends Activity {
 
 		public void onSensorChanged(int sensor, float[] values) {
 			int xTilt, yTilt;
+			xTilt = (int) values[X_ORIENTATION];
+			yTilt = (int) values[Y_ORIENTATION];
 
-			if (values[X_ORIENTATION] > baseX + xSensitivity)
+			if (motion_mode == SRV1Settings.MOTION_CONTROL_ADVANCED) {
+				advancedReactionToTilt(xTilt, yTilt);
+			} else {
+				simplereactToTilt(xTilt, yTilt);
+			}
+		}
+
+		public void advancedReactionToTilt(int xTilt, int yTilt) {
+			//int xBorder, yBorder;
+			int leftMotor = SRV1DirectMotorControlCommand.STOP_SPEED;
+			int rightMotor = SRV1DirectMotorControlCommand.STOP_SPEED;
+
+			byte temp;
+
+			// Ignore some events... we should use a timer instead of doing this.
+			if (cheapSlowdown > 0) {
+				cheapSlowdown--;
+				return;
+			}
+			cheapSlowdown = cheapSlowdownIncrement;
+			
+			if (xTilt > xBase + xMinThreshold) {
+				//xBorder = DIR_FORWARD;
+				// Bound xTilt value.
+				xTilt = xTilt > xBase + xMaxThreshold ? xBase + xMaxThreshold
+						: xTilt;
+				leftMotor = rightMotor = (byte) map(xTilt - xBase,
+						xMinThreshold, xMaxThreshold,
+						SRV1DirectMotorControlCommand.MIN_FORWARD_SPEED,
+						SRV1DirectMotorControlCommand.MAX_FORWARD_SPEED);
+			} else if (xTilt < xBase - xMinThreshold) {
+				//xBorder = DIR_REVERSE;
+				xTilt = xTilt < xBase - xMaxThreshold ? xBase - xMaxThreshold
+						: xTilt;
+				leftMotor = rightMotor = (byte) map(xTilt - xBase, -1
+						* xMaxThreshold, -1 * xMinThreshold,
+						SRV1DirectMotorControlCommand.MAX_REVERSE_SPEED,
+						SRV1DirectMotorControlCommand.MIN_REVERSE_SPEED);
+			} else {
+				//xBorder = DIR_NONE;
+				leftMotor = SRV1DirectMotorControlCommand.STOP_SPEED;
+			}
+
+			if (yTilt > yBase + yMinThreshold) {
+				//yBorder = DIR_LEFT;
+				yTilt = yTilt > yBase + yMaxThreshold ? yBase + yMaxThreshold
+						: yTilt;
+				temp = (byte) map(yTilt - yBase, yMinThreshold, yMaxThreshold,
+						SRV1DirectMotorControlCommand.MIN_FORWARD_SPEED,
+						SRV1DirectMotorControlCommand.MAX_FORWARD_SPEED);
+				leftMotor -= temp;
+				rightMotor += temp;
+
+			} else if (yTilt < yBase - yMinThreshold) {
+				//yBorder = DIR_RIGHT;
+				yTilt = yTilt < yBase - yMaxThreshold ? yBase - yMaxThreshold
+						: yTilt;
+				temp = (byte) map(yTilt - yBase, -1 * yMaxThreshold, -1
+						* yMinThreshold,
+						SRV1DirectMotorControlCommand.MAX_REVERSE_SPEED,
+						SRV1DirectMotorControlCommand.MIN_REVERSE_SPEED);
+
+				leftMotor -= temp;
+				rightMotor += temp;
+
+			} else {
+				//yBorder = DIR_NONE;
+			}
+
+			// Adjust values to stay in ranges.
+			leftMotor = leftMotor > SRV1DirectMotorControlCommand.MAX_FORWARD_SPEED ? 
+					SRV1DirectMotorControlCommand.MAX_FORWARD_SPEED
+					: leftMotor < SRV1DirectMotorControlCommand.MAX_REVERSE_SPEED ? 
+							SRV1DirectMotorControlCommand.MAX_REVERSE_SPEED
+							: leftMotor;
+			rightMotor = rightMotor > SRV1DirectMotorControlCommand.MAX_FORWARD_SPEED ? 
+					SRV1DirectMotorControlCommand.MAX_FORWARD_SPEED
+					: rightMotor < SRV1DirectMotorControlCommand.MAX_REVERSE_SPEED ? 
+							SRV1DirectMotorControlCommand.MAX_REVERSE_SPEED
+							: rightMotor;
+
+			// Only continue if there is a significanct different sensor reading
+			// than last time.
+			if (this.leftMotor + motorTolerance >= leftMotor
+					&& leftMotor >= this.leftMotor - motorTolerance
+					&& this.rightMotor + motorTolerance >= rightMotor
+					&& rightMotor >= this.rightMotor - motorTolerance)
+				return;
+
+			this.leftMotor = (byte)leftMotor;
+			this.rightMotor = (byte)rightMotor;
+
+			// Draw the tilt border.
+			// drawTiltBorder(xBorder, yBorder); // commented out.. causing
+			// crashes?
+
+			// Send control to robot.
+			SRV1DirectMotorControlCommand command = new SRV1DirectMotorControlCommand();
+			command.setControls((byte)leftMotor, (byte)rightMotor,
+					SRV1DirectMotorControlCommand.INFINITE_DURATION);
+			communicator.putCommand(command);
+			Log.d("SRV1", "LeftMotor: " + leftMotor + " RightMotor: "
+					+ rightMotor);
+		}
+
+		public void simplereactToTilt(int xTilt, int yTilt) {
+			if (xTilt > xBase + xMinThreshold)
 				xTilt = DIR_FORWARD;
-			else if (values[X_ORIENTATION] < baseX - xSensitivity)
+			else if (xTilt < xBase - xMinThreshold)
 				xTilt = DIR_REVERSE;
 			else
 				xTilt = DIR_NONE;
 
-			if (values[Y_ORIENTATION] > baseY + ySensitivity)
+			if (yTilt > yBase + yMinThreshold)
 				yTilt = DIR_LEFT;
-			else if (values[Y_ORIENTATION] < baseY - ySensitivity)
+			else if (yTilt < yBase - yMinThreshold)
 				yTilt = DIR_RIGHT;
 			else
 				yTilt = DIR_NONE;
 
-			if (this.xTilt != xTilt || this.yTilt != yTilt) {
-				this.xTilt = xTilt;
-				this.yTilt = yTilt;
-				reactToTilt(xTilt, yTilt);
+			// Only continue if there is a different sensor reading than last
+			// time.
+			if (this.xTilt == xTilt && this.yTilt == yTilt)
+				return;
+
+			// Update the tracked tilt values so we don't run the same
+			// command again unnecessarily.
+			this.xTilt = xTilt;
+			this.yTilt = yTilt;
+
+			// Draw the tilt border.
+			drawTiltBorder(xTilt, yTilt);
+
+			// Control the motors according to what thresholds we are in.
+			SRV1DirectMotorControlCommand command = new SRV1DirectMotorControlCommand();
+
+			drawTiltBorder(xTilt, yTilt);
+			if (xTilt == DIR_NONE && yTilt == DIR_RIGHT) {
+				Log.d("SRV1", "Right");
+				command.setRight();
+			} else if (xTilt == DIR_NONE && yTilt == DIR_LEFT) {
+				Log.d("SRV1", "Left");
+				command.setLeft();
+			} else if (xTilt == DIR_FORWARD && yTilt == DIR_NONE) {
+				Log.d("SRV1", "Forward");
+				command.setForward();
+			} else if (xTilt == DIR_FORWARD && yTilt == DIR_RIGHT) {
+				Log.d("SRV1", "Forward - right");
+				command.setForwardRightDrift();
+			} else if (xTilt == DIR_FORWARD && yTilt == DIR_LEFT) {
+				Log.d("SRV1", "Forward - left");
+				command.setForwardLeftDrift();
+			} else if (xTilt == DIR_REVERSE && yTilt == DIR_NONE) {
+				Log.d("SRV1", "Reverse");
+				command.setReverse();
+			} else if (xTilt == DIR_REVERSE && yTilt == DIR_RIGHT) {
+				Log.d("SRV1", "Reverse - right");
+				command.setReverseRightDrift();
+			} else if (xTilt == DIR_REVERSE && yTilt == DIR_LEFT) {
+				Log.d("SRV1", "Reverse -left");
+				command.setReverseLeftDrift();
+			} else { // Lets assume they are stopping.
+				Log.d("SRV1", "Stopped");
+				command.setStop();
 			}
+
+			communicator.putCommand(command);
 		}
 
 	};
 
-	public void reactToTilt(int xTilt, int yTilt) {
-		SRV1DirectMotorControlCommand command = null;
-		drawTiltBorder(xTilt, yTilt);
-		if (xTilt == DIR_NONE && yTilt == DIR_NONE) {
-			Log.d("SRV1", "Stopped");
-			command = new SRV1DirectMotorControlCommand();
-			command.setStop();
-		} else if (xTilt == DIR_NONE && yTilt == DIR_RIGHT) {
-			Log.d("SRV1", "Right");
-			command = new SRV1DirectMotorControlCommand();
-			command.setRight();
-		} else if (xTilt == DIR_NONE && yTilt == DIR_LEFT) {
-			Log.d("SRV1", "Left");
-			command = new SRV1DirectMotorControlCommand();
-			command.setLeft();
-		} else if (xTilt == DIR_FORWARD && yTilt == DIR_NONE) {
-			Log.d("SRV1", "Forward");
-			command = new SRV1DirectMotorControlCommand();
-			command.setForward();
-		} else if (xTilt == DIR_FORWARD && yTilt == DIR_RIGHT) {
-			Log.d("SRV1", "Forward - right");
-			command = new SRV1DirectMotorControlCommand();
-			command.setForwardRightDrift();
-		} else if (xTilt == DIR_FORWARD && yTilt == DIR_LEFT) {
-			Log.d("SRV1", "Forward - left");
-			command = new SRV1DirectMotorControlCommand();
-			command.setForwardLeftDrift();
-		} else if (xTilt == DIR_REVERSE && yTilt == DIR_NONE) {
-			Log.d("SRV1", "Reverse");
-			command = new SRV1DirectMotorControlCommand();
-			command.setReverse();
-		} else if (xTilt == DIR_REVERSE && yTilt == DIR_RIGHT) {
-			Log.d("SRV1", "Reverse - right");
-			command = new SRV1DirectMotorControlCommand();
-			command.setReverseRightDrift();
-		} else if (xTilt == DIR_REVERSE && yTilt == DIR_LEFT) {
-			Log.d("SRV1", "Reverse -left");
-			command = new SRV1DirectMotorControlCommand();
-			command.setReverseLeftDrift();
-		}
-
-		if (command != null)
-			communicator.putCommand(command);
-	}
-
 	// Everything about how this border is made is awful.
 	// It will be fixed when I have more time.
 	private void drawTiltBorder(int xTilt, int yTilt) {
+
 		ImageView left_bar = (ImageView) findViewById(R.id.left_bar);
 		ImageView right_bar = (ImageView) findViewById(R.id.right_bar);
 		ImageView top_bar = (ImageView) findViewById(R.id.top_bar);
@@ -346,6 +480,7 @@ public class SRV1Console extends Activity {
 	}
 
 	public static final int SRV1CONNECT_REQUEST_CODE = 0;
+	public static final int SRV1SETTINGS_REQUEST_CODE = 1;
 
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
@@ -358,7 +493,7 @@ public class SRV1Console extends Activity {
 			return true;
 		case SETTINGS_MENU_ITEM:
 			Intent settings_intent = new Intent(this, SRV1Settings.class);
-			startActivity(settings_intent);
+			startActivityForResult(settings_intent, SRV1SETTINGS_REQUEST_CODE);
 			return true;
 		}
 		return super.onOptionsItemSelected(item);
@@ -366,7 +501,7 @@ public class SRV1Console extends Activity {
 
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		super.onActivityResult(requestCode, resultCode, data);
-		if (resultCode == RESULT_OK) {
+		if (requestCode == SRV1CONNECT_REQUEST_CODE && resultCode == RESULT_OK) {
 			try {
 
 				// Setup commands to initially send:
@@ -386,6 +521,9 @@ public class SRV1Console extends Activity {
 			} catch (Exception e) {
 				Dialogue("An error occured while attempting to connect.");
 			}
+		} else if (requestCode == SRV1SETTINGS_REQUEST_CODE) {
+			// Reload settings in case something changed.
+			loadSettings();
 		}
 	}
 

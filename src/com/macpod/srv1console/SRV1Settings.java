@@ -23,11 +23,17 @@ import android.view.View;
 import android.view.WindowManager;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 
 public class SRV1Settings extends Activity {
 	public static final String SRV1_SETTINGS = "SRV1_SETTINGS";
 	public static final String DEFAULT_SERVER = "default_server";
+
+	public static final String MOTION__CONTROL_MODE = "motion_control_mode";
+	public static final int MOTION_CONTROL_SIMPLE = 0;
+	public static final int MOTION_CONTROL_ADVANCED = 1;
+	public static final int MOTION_CONTROL_DEFAULT = MOTION_CONTROL_SIMPLE;
 
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -37,12 +43,8 @@ public class SRV1Settings extends Activity {
 				WindowManager.LayoutParams.FLAG_FULLSCREEN);
 		setContentView(R.layout.srv1settings);
 
-		SharedPreferences settings = getSharedPreferences(
-				SRV1Settings.SRV1_SETTINGS, 0);
-		EditText server_field = (EditText) findViewById(R.id.server_field);
-		server_field.setText(settings.getString(SRV1Settings.DEFAULT_SERVER,
-				getString(R.string.default_server)));
-
+		setLastSavedPreferences();
+		
 		Button revertButton = (Button) findViewById(R.id.revert_button);
 		revertButton.setOnClickListener(revertButtonListener);
 
@@ -50,15 +52,25 @@ public class SRV1Settings extends Activity {
 		saveButton.setOnClickListener(saveButtonListener);
 	}
 
+	private void setLastSavedPreferences()
+	{
+		SharedPreferences settings = getSharedPreferences(
+				SRV1Settings.SRV1_SETTINGS, 0);
+		
+		EditText server_field = (EditText) findViewById(R.id.server_field);
+		server_field.setText(settings.getString(SRV1Settings.DEFAULT_SERVER,
+				getString(R.string.default_server)));
+
+		CheckBox advancedControlCheckbox = (CheckBox) findViewById(R.id.advanced_control_checkbox);
+		advancedControlCheckbox
+				.setChecked(settings.getInt(MOTION__CONTROL_MODE,
+						MOTION_CONTROL_DEFAULT) == MOTION_CONTROL_ADVANCED ? true
+						: false);
+	}
 	private OnClickListener revertButtonListener = new OnClickListener() {
 
 		public void onClick(View view) {
-			EditText server_field = (EditText) findViewById(R.id.server_field);
-			SharedPreferences settings = getSharedPreferences(
-					SRV1Settings.SRV1_SETTINGS, 0);
-			server_field.setText(settings.getString(
-					SRV1Settings.DEFAULT_SERVER,
-					getString(R.string.default_server)));
+			setLastSavedPreferences();
 		}
 
 	};
@@ -69,12 +81,18 @@ public class SRV1Settings extends Activity {
 			SharedPreferences settings = getSharedPreferences(
 					SRV1Settings.SRV1_SETTINGS, 0);
 			SharedPreferences.Editor editor = settings.edit();
+			
 			EditText server_field = (EditText) findViewById(R.id.server_field);
-			editor.putString(SRV1Settings.DEFAULT_SERVER, server_field
+			editor.putString(DEFAULT_SERVER, server_field
 					.getText().toString());
+
+			CheckBox advancedControlCheckbox = (CheckBox) findViewById(R.id.advanced_control_checkbox);
+			editor.putInt(MOTION__CONTROL_MODE, advancedControlCheckbox.isChecked() ? MOTION_CONTROL_ADVANCED : MOTION_CONTROL_DEFAULT);
+
 			editor.commit();
 			finish();
 		}
 
 	};
+
 }
