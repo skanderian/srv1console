@@ -8,4 +8,5 @@
 	<string name="connect">Connect</string>
 	<string name="save">Save</string>
 	<string name="revert">Revert</string>
+<string name="advanced_control_string">Used advanced motion control mode</string>
 </resources>

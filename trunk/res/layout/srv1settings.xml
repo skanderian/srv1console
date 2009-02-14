@@ -17,12 +17,20 @@
         android:layout_height="wrap_content"
         android:background="@android:drawable/editbox_background"
         android:layout_below="@id/server_label"/>
+    <CheckBox
+        android:id="@+id/advanced_control_checkbox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/server_field"
+        android:layout_alignParentLeft="true"
+        android:layout_marginLeft="10dip"
+        android:text="@string/advanced_control_string"/>      
     <Button
         android:id="@+id/save_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/server_field"
         android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true"
         android:layout_marginLeft="10dip"
         android:text="@string/save"/>         
     <Button
