@@ -10,7 +10,19 @@
 		android:layout_width="320px"
         android:layout_height="240px"
         android:layout_centerInParent="true"/>
-        
+                
+    <ImageView android:id="@+id/s1_servo_bar"
+		android:layout_width="320px"
+		android:layout_height="5px"
+		android:layout_centerInParent="true"
+		android:layout_below="@id/video_view"/>	
+
+    <ImageView android:id="@+id/s2_servo_bar"
+		android:layout_height="240px"
+		android:layout_width="5px"
+		android:layout_centerInParent="true"
+		android:layout_toRightOf="@id/video_view"/>
+		        
     <ImageView android:id="@+id/left_bar"
 		android:layout_width="5px"
 		android:layout_height="480px"		

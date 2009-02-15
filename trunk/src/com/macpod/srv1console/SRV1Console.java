@@ -96,7 +96,7 @@ public class SRV1Console extends Activity {
 	}
 
 	private static final int MAX_S1_PWM = SRV1Servo2Command.MAX_PWM; // Open
-																		// jaws
+	// jaws
 	private static final int MAX_S2_PWM = SRV1Servo2Command.MAX_PWM; // knife up
 
 	private static final int MIN_S1_PWM = 30;
@@ -137,6 +137,7 @@ public class SRV1Console extends Activity {
 
 			command.setControls(curr_s1_pwm, curr_s2_pwm);
 			communicator.putCommand(command);
+			draw_servo_bars();
 			Log.d("SRV1", "Servo s1 pwm: " + curr_s1_pwm + " s2 pwm: "
 					+ curr_s2_pwm);
 
@@ -221,6 +222,10 @@ public class SRV1Console extends Activity {
 	protected static final int UPDATE_INTERFACE = 0;
 	protected static final int UPDATE_IMAGE = 2;
 
+	private int map(int x, int in_min, int in_max, int out_min, int out_max) {
+		return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+	}
+
 	private Handler interface_handler = new Handler() {
 		public void handleMessage(Message msg) {
 			switch (msg.what) {
@@ -272,11 +277,6 @@ public class SRV1Console extends Activity {
 
 		private int cheapSlowdown = 0;
 		private int cheapSlowdownIncrement = 5;
-
-		private int map(int x, int in_min, int in_max, int out_min, int out_max) {
-			return (x - in_min) * (out_max - out_min) / (in_max - in_min)
-					+ out_min;
-		}
 
 		public void onAccuracyChanged(int sensor, int accuracy) {
 			Log.d("SRV1", "Sensor accuracty changed");
@@ -497,6 +497,35 @@ public class SRV1Console extends Activity {
 		right_bar.setImageBitmap(right_bar_bm);
 		top_bar.setImageBitmap(top_bar_bm);
 		bottom_bar.setImageBitmap(bottom_bar_bm);
+	}
+
+	// This method is just as ugly as the drawtiltborder.. it will be fixed
+	private void draw_servo_bars() {
+		ImageView s1_servo_bar = (ImageView) findViewById(R.id.s1_servo_bar);
+		ImageView s2_servo_bar = (ImageView) findViewById(R.id.s2_servo_bar);
+
+		int s1_pos = map(curr_s1_pwm, MIN_S1_PWM, MAX_S1_PWM, 0, 316);
+		int s2_pos = map(curr_s2_pwm, MIN_S2_PWM, MAX_S2_PWM, 0, 236);
+
+		Bitmap s1_bm = Bitmap.createBitmap(320, 5, Bitmap.Config.RGB_565);
+		Bitmap s2_bm = Bitmap.createBitmap(5, 240, Bitmap.Config.RGB_565);
+
+		for (int i = 0; i < 4; i++) {
+			s1_bm.setPixel(s1_pos + i, 0, Color.RED);
+			s1_bm.setPixel(s1_pos + i, 1, Color.RED);
+			s1_bm.setPixel(s1_pos + i, 2, Color.RED);
+			s1_bm.setPixel(s1_pos + i, 3, Color.RED);
+			s1_bm.setPixel(s1_pos + i, 4, Color.RED);
+
+			s2_bm.setPixel(0, s2_pos + i, Color.RED);
+			s2_bm.setPixel(1, s2_pos + i, Color.RED);
+			s2_bm.setPixel(2, s2_pos + i, Color.RED);
+			s2_bm.setPixel(3, s2_pos + i, Color.RED);
+			s2_bm.setPixel(4, s2_pos + i, Color.RED);
+		}
+
+		s1_servo_bar.setImageBitmap(s1_bm);
+		s2_servo_bar.setImageBitmap(s2_bm);
 	}
 
 	public void updateInterface() {
