@@ -41,65 +41,68 @@ public class SRV1DirectMotorControlCommand extends SRV1Command {
 	private byte rightMotor = STOP_SPEED;
 	private int duration = INFINITE_DURATION;
 
+	private byte boundDuration (int duration) {
+		duration = duration/10;
+		return  (byte) (duration > MAX_DURATION ? MAX_DURATION : duration < INFINITE_DURATION ? INFINITE_DURATION : duration);
+	}
+	
+	private byte boundLeftMotor(int leftMotor) {
+		return (byte) (leftMotor > MAX_FORWARD_SPEED ? MAX_FORWARD_SPEED : leftMotor < MAX_REVERSE_SPEED ? MAX_REVERSE_SPEED : leftMotor);
+	}
+	
+	private byte boundRightMotor(int rightMotor) {
+		return (byte) (rightMotor > MAX_FORWARD_SPEED ? MAX_FORWARD_SPEED : rightMotor < MAX_REVERSE_SPEED ? MAX_REVERSE_SPEED : rightMotor);
+	}
+	
+	
 	public boolean setControls(byte leftMotor, byte rightMotor, byte duration) {
-		// Set to stop if a bogus values were sent in. It's better to stop then
-		// fall off a table!
-		if (duration > MAX_DURATION || leftMotor > MAX_FORWARD_SPEED
-				|| leftMotor < MAX_REVERSE_SPEED
-				|| rightMotor > MAX_FORWARD_SPEED
-				|| rightMotor < MAX_REVERSE_SPEED) {
-
-			duration = INFINITE_DURATION;
-			leftMotor = STOP_SPEED;
-			rightMotor = STOP_SPEED;
-			return false;
-		}
-		this.duration = duration;
-		this.leftMotor = leftMotor;
-		this.rightMotor = rightMotor;
+		// Bound values if they are not appropriate.
+		this.duration = boundDuration(duration);
+		this.leftMotor = boundLeftMotor(leftMotor);
+		this.rightMotor = boundRightMotor(rightMotor);
 		return true;
 	}
 
-	public void setStop() {
-		setControls(STOP_SPEED, STOP_SPEED, INFINITE_DURATION);
+	public void setStop(int duration) {
+		setControls(STOP_SPEED, STOP_SPEED, boundDuration(duration));
 	}
 
-	public void setRight() {
+	public void setRight(int duration) {
 		setControls(DEFAULT_FORWARD_SPEED, DEFAULT_REVERSE_SPEED,
-				INFINITE_DURATION);
+				boundDuration(duration));
 	}
 
-	public void setLeft() {
+	public void setLeft(int duration) {
 		setControls(DEFAULT_REVERSE_SPEED, DEFAULT_FORWARD_SPEED,
-				INFINITE_DURATION);
+				boundDuration(duration));
 	}
 
-	public void setForward() {
+	public void setForward(int duration) {
 		setControls(DEFAULT_FORWARD_SPEED, DEFAULT_FORWARD_SPEED,
-				INFINITE_DURATION);
+				boundDuration(duration));
 	}
 
-	public void setForwardRightDrift() {
+	public void setForwardRightDrift(int duration) {
 		setControls(DEFAULT_FORWARD_STRONG_DRIFT, DEFAULT_FORWARD_WEAK_DRIFT,
 				INFINITE_DURATION);
 	}
 
-	public void setForwardLeftDrift() {
+	public void setForwardLeftDrift(int duration) {
 		setControls(DEFAULT_FORWARD_WEAK_DRIFT, DEFAULT_FORWARD_STRONG_DRIFT,
-				INFINITE_DURATION);
+				boundDuration(duration));
 	}
 
-	public void setReverse() {
+	public void setReverse(int duration) {
 		setControls(DEFAULT_REVERSE_SPEED, DEFAULT_REVERSE_SPEED,
-				INFINITE_DURATION);
+				boundDuration(duration));
 	}
 
-	public void setReverseRightDrift() {
+	public void setReverseRightDrift(int duration) {
 		setControls(DEFAULT_REVERSE_STRONG_DRIFT, DEFAULT_REVERSE_WEAK_DRIFT,
-				INFINITE_DURATION);
+				boundDuration(duration));
 	}
 
-	public void setReverseLeftDrift() {
+	public void setReverseLeftDrift(int duration) {
 		setControls(DEFAULT_FORWARD_WEAK_DRIFT, DEFAULT_REVERSE_STRONG_DRIFT, INFINITE_DURATION);
 	}
 

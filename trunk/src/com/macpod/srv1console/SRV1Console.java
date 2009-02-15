@@ -34,6 +34,7 @@ import android.os.Message;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -68,24 +69,84 @@ public class SRV1Console extends Activity {
 
 		Button laserOnButton = (Button) findViewById(R.id.laser_on_button);
 		laserOnButton.setOnClickListener(laserOnButtonListener);
+		laserOnButton.setFocusable(false);
 
 		Button laserOffButton = (Button) findViewById(R.id.laser_off_button);
 		laserOffButton.setOnClickListener(laserOffButtonListener);
+		laserOffButton.setFocusable(false);
 
 		Button s1_1Button = (Button) findViewById(R.id.s1_1_button);
 		s1_1Button.setOnClickListener(s1_1ButtonListener);
+		s1_1Button.setFocusable(false);
 
 		Button s1_2Button = (Button) findViewById(R.id.s1_2_button);
 		s1_2Button.setOnClickListener(s1_2ButtonListener);
+		s1_2Button.setFocusable(false);
 
 		Button s2_1Button = (Button) findViewById(R.id.s2_1_button);
 		s2_1Button.setOnClickListener(s2_1ButtonListener);
+		s2_1Button.setFocusable(false);
 
 		Button s2_2Button = (Button) findViewById(R.id.s2_2_button);
 		s2_2Button.setOnClickListener(s2_2ButtonListener);
+		s2_2Button.setFocusable(false);
 
 		updateInterface();
 		loadSettings();
+	}
+
+	private static final int MAX_S1_PWM = SRV1Servo2Command.MAX_PWM; // Open
+																		// jaws
+	private static final int MAX_S2_PWM = SRV1Servo2Command.MAX_PWM; // knife up
+
+	private static final int MIN_S1_PWM = 30;
+	private static final int MIN_S2_PWM = SRV1Servo2Command.MIN_PWM;
+
+	private static int PWM_S1_INC = 5;
+	private static int PWM_S2_INC = 5;
+
+	private int curr_s1_pwm = MAX_S1_PWM;
+	private int curr_s2_pwm = MAX_S2_PWM;
+
+	public boolean onTrackballEvent(MotionEvent event) {
+		float xMove = event.getX();
+		float yMove = event.getY();
+
+		if (communicator == null || !communicator.connected())
+			return true;
+
+		if (MotionEvent.ACTION_MOVE == event.getAction()) {
+
+			SRV1Servo2Command command = new SRV1Servo2Command();
+			// See where they went
+			if (xMove < 0) {// Scrolled left
+				if (curr_s2_pwm - PWM_S2_INC >= MIN_S2_PWM)
+					curr_s2_pwm -= PWM_S2_INC;
+			} else if (xMove > 0) {// Scrolled right
+				if (curr_s2_pwm + PWM_S2_INC <= MAX_S2_PWM)
+					curr_s2_pwm += PWM_S2_INC;
+			}
+
+			if (yMove < 0) { // Scrolled up
+				if (curr_s1_pwm - PWM_S1_INC >= MIN_S1_PWM)
+					curr_s1_pwm -= PWM_S1_INC;
+			} else if (yMove > 0) { // Scrolled down
+				if (curr_s1_pwm + PWM_S1_INC <= MAX_S1_PWM)
+					curr_s1_pwm += PWM_S1_INC;
+			}
+
+			command.setControls(curr_s1_pwm, curr_s2_pwm);
+			communicator.putCommand(command);
+			Log.d("SRV1", "Servo s1 pwm: " + curr_s1_pwm + " s2 pwm: "
+					+ curr_s2_pwm);
+
+		}
+
+		if (MotionEvent.ACTION_DOWN == event.getAction()) {
+			Log.d("SRV1", "Trackball was clicked");
+		}
+
+		return true;
 	}
 
 	private void loadSettings() {
@@ -117,8 +178,7 @@ public class SRV1Console extends Activity {
 
 		public void onClick(View view) {
 			SRV1Servo2Command command = new SRV1Servo2Command();
-			command.setControls(SRV1Servo2Command.MIN_PWM,
-					SRV1Servo2Command.MIN_PWM);
+			command.setControls(MAX_S1_PWM, curr_s2_pwm);
 			communicator.putCommand(command);
 		}
 	};
@@ -127,8 +187,7 @@ public class SRV1Console extends Activity {
 
 		public void onClick(View view) {
 			SRV1Servo2Command command = new SRV1Servo2Command();
-			command.setControls(SRV1Servo2Command.MAX_PWM,
-					SRV1Servo2Command.MAX_PWM);
+			command.setControls(MIN_S1_PWM, curr_s2_pwm);
 			communicator.putCommand(command);
 		}
 	};
@@ -136,14 +195,18 @@ public class SRV1Console extends Activity {
 	private OnClickListener s2_1ButtonListener = new OnClickListener() {
 
 		public void onClick(View view) {
-			// Do something
+			SRV1Servo2Command command = new SRV1Servo2Command();
+			command.setControls(curr_s1_pwm, MAX_S2_PWM);
+			communicator.putCommand(command);
 		}
 	};
 
 	private OnClickListener s2_2ButtonListener = new OnClickListener() {
 
 		public void onClick(View view) {
-			// Do something
+			SRV1Servo2Command command = new SRV1Servo2Command();
+			command.setControls(curr_s1_pwm, MIN_S2_PWM);
+			communicator.putCommand(command);
 		}
 	};
 
@@ -177,9 +240,9 @@ public class SRV1Console extends Activity {
 	public static final int DIR_RIGHT = 3;
 	public static final int DIR_LEFT = 4;
 	private SensorListener tilt = new SensorListener() {
-		// private static final int Z_ORIENTATION = 0;
-		private static final int Y_ORIENTATION = 1;
-		private static final int X_ORIENTATION = 2;
+		// private static final int Z_ORIENTATION = 3;
+		private static final int Y_ORIENTATION = 4;
+		private static final int X_ORIENTATION = 5;
 
 		// int baseZ = Integer.MAX_VALUE;
 		// Screen facing up is 0
@@ -206,7 +269,7 @@ public class SRV1Console extends Activity {
 		private int yMaxThreshold = 40;
 
 		private int motorTolerance = 5;
-		
+
 		private int cheapSlowdown = 0;
 		private int cheapSlowdownIncrement = 5;
 
@@ -232,21 +295,22 @@ public class SRV1Console extends Activity {
 		}
 
 		public void advancedReactionToTilt(int xTilt, int yTilt) {
-			//int xBorder, yBorder;
+			// int xBorder, yBorder;
 			int leftMotor = SRV1DirectMotorControlCommand.STOP_SPEED;
 			int rightMotor = SRV1DirectMotorControlCommand.STOP_SPEED;
 
 			byte temp;
 
-			// Ignore some events... we should use a timer instead of doing this.
+			// Ignore some events... we should use a timer instead of doing
+			// this.
 			if (cheapSlowdown > 0) {
 				cheapSlowdown--;
 				return;
 			}
 			cheapSlowdown = cheapSlowdownIncrement;
-			
+
 			if (xTilt > xBase + xMinThreshold) {
-				//xBorder = DIR_FORWARD;
+				// xBorder = DIR_FORWARD;
 				// Bound xTilt value.
 				xTilt = xTilt > xBase + xMaxThreshold ? xBase + xMaxThreshold
 						: xTilt;
@@ -255,7 +319,7 @@ public class SRV1Console extends Activity {
 						SRV1DirectMotorControlCommand.MIN_FORWARD_SPEED,
 						SRV1DirectMotorControlCommand.MAX_FORWARD_SPEED);
 			} else if (xTilt < xBase - xMinThreshold) {
-				//xBorder = DIR_REVERSE;
+				// xBorder = DIR_REVERSE;
 				xTilt = xTilt < xBase - xMaxThreshold ? xBase - xMaxThreshold
 						: xTilt;
 				leftMotor = rightMotor = (byte) map(xTilt - xBase, -1
@@ -263,22 +327,28 @@ public class SRV1Console extends Activity {
 						SRV1DirectMotorControlCommand.MAX_REVERSE_SPEED,
 						SRV1DirectMotorControlCommand.MIN_REVERSE_SPEED);
 			} else {
-				//xBorder = DIR_NONE;
+				// xBorder = DIR_NONE;
 				leftMotor = SRV1DirectMotorControlCommand.STOP_SPEED;
 			}
 
 			if (yTilt > yBase + yMinThreshold) {
-				//yBorder = DIR_LEFT;
+				// yBorder = DIR_LEFT;
 				yTilt = yTilt > yBase + yMaxThreshold ? yBase + yMaxThreshold
 						: yTilt;
 				temp = (byte) map(yTilt - yBase, yMinThreshold, yMaxThreshold,
 						SRV1DirectMotorControlCommand.MIN_FORWARD_SPEED,
 						SRV1DirectMotorControlCommand.MAX_FORWARD_SPEED);
-				leftMotor -= temp;
-				rightMotor += temp;
 
+				if (leftMotor < 0) { // See if we are going in reverse and
+					// switch assignments
+					leftMotor += temp;
+					rightMotor -= temp;
+				} else {
+					leftMotor -= temp;
+					rightMotor += temp;
+				}
 			} else if (yTilt < yBase - yMinThreshold) {
-				//yBorder = DIR_RIGHT;
+				// yBorder = DIR_RIGHT;
 				yTilt = yTilt < yBase - yMaxThreshold ? yBase - yMaxThreshold
 						: yTilt;
 				temp = (byte) map(yTilt - yBase, -1 * yMaxThreshold, -1
@@ -286,23 +356,25 @@ public class SRV1Console extends Activity {
 						SRV1DirectMotorControlCommand.MAX_REVERSE_SPEED,
 						SRV1DirectMotorControlCommand.MIN_REVERSE_SPEED);
 
-				leftMotor -= temp;
-				rightMotor += temp;
+				if (leftMotor < 0) { // See if we are going in reverse and
+					// switch assignments
+					leftMotor += temp;
+					rightMotor -= temp;
+				} else {
+					leftMotor -= temp;
+					rightMotor += temp;
+				}
 
 			} else {
-				//yBorder = DIR_NONE;
+				// yBorder = DIR_NONE;
 			}
 
 			// Adjust values to stay in ranges.
-			leftMotor = leftMotor > SRV1DirectMotorControlCommand.MAX_FORWARD_SPEED ? 
-					SRV1DirectMotorControlCommand.MAX_FORWARD_SPEED
-					: leftMotor < SRV1DirectMotorControlCommand.MAX_REVERSE_SPEED ? 
-							SRV1DirectMotorControlCommand.MAX_REVERSE_SPEED
+			leftMotor = leftMotor > SRV1DirectMotorControlCommand.MAX_FORWARD_SPEED ? SRV1DirectMotorControlCommand.MAX_FORWARD_SPEED
+					: leftMotor < SRV1DirectMotorControlCommand.MAX_REVERSE_SPEED ? SRV1DirectMotorControlCommand.MAX_REVERSE_SPEED
 							: leftMotor;
-			rightMotor = rightMotor > SRV1DirectMotorControlCommand.MAX_FORWARD_SPEED ? 
-					SRV1DirectMotorControlCommand.MAX_FORWARD_SPEED
-					: rightMotor < SRV1DirectMotorControlCommand.MAX_REVERSE_SPEED ? 
-							SRV1DirectMotorControlCommand.MAX_REVERSE_SPEED
+			rightMotor = rightMotor > SRV1DirectMotorControlCommand.MAX_FORWARD_SPEED ? SRV1DirectMotorControlCommand.MAX_FORWARD_SPEED
+					: rightMotor < SRV1DirectMotorControlCommand.MAX_REVERSE_SPEED ? SRV1DirectMotorControlCommand.MAX_REVERSE_SPEED
 							: rightMotor;
 
 			// Only continue if there is a significanct different sensor reading
@@ -313,8 +385,8 @@ public class SRV1Console extends Activity {
 					&& rightMotor >= this.rightMotor - motorTolerance)
 				return;
 
-			this.leftMotor = (byte)leftMotor;
-			this.rightMotor = (byte)rightMotor;
+			this.leftMotor = (byte) leftMotor;
+			this.rightMotor = (byte) rightMotor;
 
 			// Draw the tilt border.
 			// drawTiltBorder(xBorder, yBorder); // commented out.. causing
@@ -322,7 +394,7 @@ public class SRV1Console extends Activity {
 
 			// Send control to robot.
 			SRV1DirectMotorControlCommand command = new SRV1DirectMotorControlCommand();
-			command.setControls((byte)leftMotor, (byte)rightMotor,
+			command.setControls((byte) leftMotor, (byte) rightMotor,
 					SRV1DirectMotorControlCommand.INFINITE_DURATION);
 			communicator.putCommand(command);
 			Log.d("SRV1", "LeftMotor: " + leftMotor + " RightMotor: "
@@ -363,31 +435,35 @@ public class SRV1Console extends Activity {
 			drawTiltBorder(xTilt, yTilt);
 			if (xTilt == DIR_NONE && yTilt == DIR_RIGHT) {
 				Log.d("SRV1", "Right");
-				command.setRight();
+				command.setRight(SRV1DirectMotorControlCommand.MAX_DURATION);
 			} else if (xTilt == DIR_NONE && yTilt == DIR_LEFT) {
 				Log.d("SRV1", "Left");
-				command.setLeft();
+				command.setLeft(SRV1DirectMotorControlCommand.MAX_DURATION);
 			} else if (xTilt == DIR_FORWARD && yTilt == DIR_NONE) {
 				Log.d("SRV1", "Forward");
-				command.setForward();
+				command.setForward(SRV1DirectMotorControlCommand.MAX_DURATION);
 			} else if (xTilt == DIR_FORWARD && yTilt == DIR_RIGHT) {
 				Log.d("SRV1", "Forward - right");
-				command.setForwardRightDrift();
+				command
+						.setForwardRightDrift(SRV1DirectMotorControlCommand.MAX_DURATION);
 			} else if (xTilt == DIR_FORWARD && yTilt == DIR_LEFT) {
 				Log.d("SRV1", "Forward - left");
-				command.setForwardLeftDrift();
+				command
+						.setForwardLeftDrift(SRV1DirectMotorControlCommand.MAX_DURATION);
 			} else if (xTilt == DIR_REVERSE && yTilt == DIR_NONE) {
 				Log.d("SRV1", "Reverse");
-				command.setReverse();
+				command.setReverse(SRV1DirectMotorControlCommand.MAX_DURATION);
 			} else if (xTilt == DIR_REVERSE && yTilt == DIR_RIGHT) {
 				Log.d("SRV1", "Reverse - right");
-				command.setReverseRightDrift();
+				command
+						.setReverseRightDrift(SRV1DirectMotorControlCommand.MAX_DURATION);
 			} else if (xTilt == DIR_REVERSE && yTilt == DIR_LEFT) {
 				Log.d("SRV1", "Reverse -left");
-				command.setReverseLeftDrift();
+				command
+						.setReverseLeftDrift(SRV1DirectMotorControlCommand.MAX_DURATION);
 			} else { // Lets assume they are stopping.
 				Log.d("SRV1", "Stopped");
-				command.setStop();
+				command.setStop(SRV1DirectMotorControlCommand.MAX_DURATION);
 			}
 
 			communicator.putCommand(command);
