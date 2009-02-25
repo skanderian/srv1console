@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
 	package="com.macpod.srv1console" android:versionName="0.3.2"
 	android:versionCode="3">
-	<uses-sdk minSdkVersion="2"/>
+	<uses-sdk minSdkVersion="2" />
 	<application android:icon="@drawable/icon" android:label="@string/app_name">
 		<activity android:name=".SRV1Console" android:label="@string/app_name"
 			android:screenOrientation="landscape">
@@ -16,5 +16,5 @@
 		<activity android:name=".SRV1Settings" android:label="@string/srv1settings_name"
 			android:screenOrientation="landscape" />
 	</application>
-	<uses-permission android:name="android.permission.INTERNET"></uses-permission>
+	<uses-permission android:name="android.permission.INTERNET" />
 </manifest> 

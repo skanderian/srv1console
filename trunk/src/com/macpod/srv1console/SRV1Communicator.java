@@ -24,6 +24,7 @@ package com.macpod.srv1console;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.concurrent.BlockingQueue;
@@ -41,22 +42,15 @@ public class SRV1Communicator {
 		if (communicator != null && communicator.connected()) {
 			return false;
 		}
-		try {
-			communicator = new SRV1CommunicatorThreader();
-			return communicator.connect(host, new_handler, commandQueue);
-		} catch (Exception e) {
-			return false;
-		}
+		communicator = new SRV1CommunicatorThreader();
+		return communicator.connect(host, new_handler, commandQueue);
 	}
 
 	public void disconnect() {
-		try {
-			if (communicator == null)
-				return;
-			communicator.disconnect();
-			communicator = null;
-		} catch (Exception e) {
-		}
+		if (!connected())
+			return;
+		communicator.disconnect();
+		communicator = null;
 	}
 
 	public boolean connected() {
@@ -139,10 +133,13 @@ public class SRV1Communicator {
 		}
 
 		public void putCommand(SRV1Command command) {
-			try {
-				commandQueue.put(command);
-			} catch (InterruptedException e) {
-				// =========================================================================
+			boolean retry = true;
+			while (retry) {
+				try {
+					commandQueue.put(command);
+					retry = false;
+				} catch (InterruptedException e) {
+				}
 			}
 		}
 
@@ -178,19 +175,15 @@ public class SRV1Communicator {
 			commandQueue.clear();
 			try {
 				connection.shutdownInput();
-			} catch (Exception e) {
+			} catch (IOException e) {
 			}
 			try {
 				connection.shutdownOutput();
-			} catch (Exception e) {
+			} catch (IOException e) {
 			}
 			try {
 				connection.close();
-			} catch (Exception e) {
-			}
-			try {
-				join();
-			} catch (Exception e) {
+			} catch (IOException e) {
 			}
 		}
 	}
