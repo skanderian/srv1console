@@ -6,7 +6,7 @@
     android:keepScreenOn="true"
     android:padding="0dip">
     
-	<ImageView android:id="@+id/video_view"
+	<com.macpod.srv1console.SRV1VideoView android:id="@+id/video_view"
 		android:layout_width="320px"
         android:layout_height="240px"
         android:layout_centerInParent="true"/>

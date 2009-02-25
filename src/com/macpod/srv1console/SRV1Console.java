@@ -23,7 +23,6 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.ActivityInfo;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.hardware.SensorListener;
@@ -47,14 +46,12 @@ import com.macpod.srv1console.SRV1SetCaptureResolutionCommand.CaptureResolution;
 public class SRV1Console extends Activity {
 
 	private SRV1Communicator communicator = null;
-	private SRV1Video video = new SRV1Video();
 	private Menu optionsMenu = null;
 	private int motion_mode = SRV1Settings.MOTION_CONTROL_DEFAULT;
 
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 
 		getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
@@ -62,8 +59,6 @@ public class SRV1Console extends Activity {
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
 		setContentView(R.layout.srv1console);
-		ImageView iv = (ImageView) findViewById(R.id.video_view);
-		iv.setImageDrawable(video);
 
 		communicator = new SRV1Communicator();
 
@@ -231,9 +226,6 @@ public class SRV1Console extends Activity {
 			switch (msg.what) {
 			case UPDATE_INTERFACE:
 				updateInterface();
-				break;
-			case UPDATE_IMAGE:
-				updateImage();
 				break;
 			}
 		}
@@ -549,18 +541,6 @@ public class SRV1Console extends Activity {
 		}
 	}
 
-	public void updateImage() {
-		// Log.d("SRV1", "Updating image!");
-		try {
-			ImageView iv = (ImageView) findViewById(R.id.video_view);
-			iv.invalidate();
-		} catch (Exception e) {
-			// Ignore. Could be thrown because of a null bitmap or because
-			// the
-			// socket is dead.
-		}
-	}
-
 	private void Dialogue(CharSequence message) {
 		new AlertDialog.Builder(this).setMessage(message).setNeutralButton(
 				"OK", new DialogInterface.OnClickListener() {
@@ -608,13 +588,12 @@ public class SRV1Console extends Activity {
 		super.onActivityResult(requestCode, resultCode, data);
 		if (requestCode == SRV1CONNECT_REQUEST_CODE && resultCode == RESULT_OK) {
 			try {
-
+				SRV1VideoView video = (SRV1VideoView) findViewById(R.id.video_view);
 				// Setup commands to initially send:
 				BlockingQueue<SRV1Command> commandQueue = new LinkedBlockingQueue<SRV1Command>();
 				commandQueue.put(new SRV1SetCaptureResolutionCommand(
 						CaptureResolution.RES320x240));
-				commandQueue
-						.put(new SRV1VideoCommand(interface_handler, video));
+				commandQueue.put(new SRV1VideoCommand(video));
 				// Connect
 				if (!communicator.connect(data.getStringExtra("server"),
 						interface_handler, commandQueue)) {

@@ -20,21 +20,27 @@ import java.io.DataOutputStream;
 
 import android.graphics.BitmapFactory;
 import android.graphics.Bitmap.Config;
-import android.os.Handler;
-import android.os.Message;
 import android.util.Log;
 
 public class SRV1VideoCommand extends SRV1Command {
+	private static final int JPEG_HEADER_COUNT = 6;
+	private static final char JPEG_HEADER_1 = '#';
+	private static final char JPEG_HEADER_2 = '#';
+	private static final char JPEG_HEADER_3 = 'I';
+	private static final char JPEG_HEADER_4 = 'M';
+	private static final char JPEG_HEADER_5 = 'J';
+	private static final char JPEG_HEADER_6 = '5';
+
+	private static final int IMAGE_SIZE_BYTE_COUNT = 4;
+
 	private int dataSize = 16000;
 	private byte[] data = new byte[dataSize];
 	private int tempSpaceSize = 16000;
 	private byte[] storage = new byte[tempSpaceSize];
 	private BitmapFactory.Options factory_options = new BitmapFactory.Options();
-	private SRV1Video video;
-	private Handler interface_handler;
+	private SRV1VideoView video;
 
-	public SRV1VideoCommand(Handler interface_handler, SRV1Video video) {
-		this.interface_handler = interface_handler;
+	public SRV1VideoCommand(SRV1VideoView video) {
 		this.video = video;
 		factory_options.inTempStorage = storage;
 		factory_options.inDither = false;
@@ -60,17 +66,14 @@ public class SRV1VideoCommand extends SRV1Command {
 		if (imageSize <= 0) { // Make sure it is a sane image size.
 			return false;
 		}
-		if (imageSize > dataSize) { // Increase the size of our buffers if it is
-			// bigger.
+
+		if (imageSize > dataSize) { // Bump up the size of our buffers if needed
 			Log.d("SRV1", "More video space has been requested.");
 			byte[] tempData = new byte[imageSize];
 			byte[] tempStorage = new byte[imageSize];
 
-			if (tempData == null || tempStorage == null) { // Assume the size
-				// was bogus (and
-				// that we
-				// didn't run out of memory)
-				clearInputStream(in);
+			if (tempData == null || tempStorage == null) {
+				// Assume size was bogus (and that we didn't run out of memory)
 				return false;
 			}
 			data = tempData;
@@ -80,17 +83,10 @@ public class SRV1VideoCommand extends SRV1Command {
 		// Read the image data
 		readData(in, imageSize);
 
-		// Stick it in a bitmap.
+		// Display image.
 		video.putFrame(BitmapFactory.decodeByteArray(data, 0, imageSize,
 				factory_options));
 
-		// Display the image
-		try {
-			Message m = Message.obtain();
-			m.what = SRV1Console.UPDATE_IMAGE;
-			interface_handler.sendMessage(m);
-		} catch (Exception e) {
-		}
 		return true;
 	}
 
@@ -103,17 +99,21 @@ public class SRV1VideoCommand extends SRV1Command {
 	}
 
 	private boolean goodHeader(DataInputStream in) throws Exception {
-		// Read in header
-		if ((char) in.readByte() != '#' || (char) in.readByte() != '#'
-				|| (char) in.readByte() != 'I' || (char) in.readByte() != 'M'
-				|| (char) in.readByte() != 'J' || (char) in.readByte() != '5') {
-			return false;
-		}
-		return true;
+		if (in.available() >= JPEG_HEADER_COUNT
+				&& (char) in.readByte() == JPEG_HEADER_1
+				&& (char) in.readByte() == JPEG_HEADER_2
+				&& (char) in.readByte() == JPEG_HEADER_3
+				&& (char) in.readByte() == JPEG_HEADER_4
+				&& (char) in.readByte() == JPEG_HEADER_5
+				&& (char) in.readByte() == JPEG_HEADER_6)
+			return true;
+		return false;
 	}
 
 	private int readImageSize(DataInputStream in) throws Exception {
-		// Read the size of the image
+		// Make sure we can read in the image size, then read it.
+		if (in.available() < IMAGE_SIZE_BYTE_COUNT)
+			return 0;
 		return 0 | in.readUnsignedByte() | in.readUnsignedByte() << 8
 				| in.readUnsignedByte() << 16 | in.readUnsignedByte() << 24;
 	}
