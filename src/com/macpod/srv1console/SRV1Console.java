@@ -25,6 +25,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable.Orientation;
 import android.hardware.SensorListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
@@ -42,6 +43,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 
 import com.macpod.srv1console.SRV1SetCaptureResolutionCommand.CaptureResolution;
+import com.macpod.srv1console.SRV1VideoOrientationCommand.VideoOrientation;
 
 public class SRV1Console extends Activity {
 
@@ -593,6 +595,8 @@ public class SRV1Console extends Activity {
 				BlockingQueue<SRV1Command> commandQueue = new LinkedBlockingQueue<SRV1Command>();
 				commandQueue.put(new SRV1SetCaptureResolutionCommand(
 						CaptureResolution.RES320x240));
+				commandQueue.put(new SRV1VideoOrientationCommand(
+						VideoOrientation.NORMAL_ORIENTATION));
 				commandQueue.put(new SRV1VideoCommand(video));
 				// Connect
 				if (!communicator.connect(data.getStringExtra("server"),
