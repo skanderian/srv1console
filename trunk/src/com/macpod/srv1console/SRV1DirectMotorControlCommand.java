@@ -26,6 +26,7 @@ public class SRV1DirectMotorControlCommand extends SRV1Command {
 	public static final byte STOP_SPEED = 0;
 	public static final byte MIN_REVERSE_SPEED = -1;
 	public static final byte MAX_REVERSE_SPEED = -100;
+
 	public static final int MIN_DURATION = 1; // = 1 * 10ms = 10ms
 	public static final int MAX_DURATION = 255; // = 255 * 10ms = 2550ms
 	public static final byte INFINITE_DURATION = 0;
@@ -41,20 +42,25 @@ public class SRV1DirectMotorControlCommand extends SRV1Command {
 	private byte rightMotor = STOP_SPEED;
 	private int duration = INFINITE_DURATION;
 
-	private byte boundDuration (int duration) {
-		duration = duration/10;
-		return  (byte) (duration > MAX_DURATION ? MAX_DURATION : duration < INFINITE_DURATION ? INFINITE_DURATION : duration);
+	private byte boundDuration(int duration) {
+		return (byte) (duration > MAX_DURATION ? MAX_DURATION
+				: duration < INFINITE_DURATION ? INFINITE_DURATION : duration);
+	}
+
+	public static byte boundMotorValue(int motorValue) {
+		return (byte) (motorValue > MAX_FORWARD_SPEED ? MAX_FORWARD_SPEED
+				: motorValue < MAX_REVERSE_SPEED ? MAX_REVERSE_SPEED : motorValue);
 	}
 	
 	private byte boundLeftMotor(int leftMotor) {
-		return (byte) (leftMotor > MAX_FORWARD_SPEED ? MAX_FORWARD_SPEED : leftMotor < MAX_REVERSE_SPEED ? MAX_REVERSE_SPEED : leftMotor);
+		return boundMotorValue(leftMotor);
 	}
-	
+
 	private byte boundRightMotor(int rightMotor) {
-		return (byte) (rightMotor > MAX_FORWARD_SPEED ? MAX_FORWARD_SPEED : rightMotor < MAX_REVERSE_SPEED ? MAX_REVERSE_SPEED : rightMotor);
+		return boundMotorValue(rightMotor);
+
 	}
-	
-	
+
 	public boolean setControls(byte leftMotor, byte rightMotor, byte duration) {
 		// Bound values if they are not appropriate.
 		this.duration = boundDuration(duration);
@@ -84,7 +90,7 @@ public class SRV1DirectMotorControlCommand extends SRV1Command {
 
 	public void setForwardRightDrift(int duration) {
 		setControls(DEFAULT_FORWARD_STRONG_DRIFT, DEFAULT_FORWARD_WEAK_DRIFT,
-				INFINITE_DURATION);
+				boundDuration(duration));
 	}
 
 	public void setForwardLeftDrift(int duration) {
@@ -103,7 +109,8 @@ public class SRV1DirectMotorControlCommand extends SRV1Command {
 	}
 
 	public void setReverseLeftDrift(int duration) {
-		setControls(DEFAULT_FORWARD_WEAK_DRIFT, DEFAULT_REVERSE_STRONG_DRIFT, INFINITE_DURATION);
+		setControls(DEFAULT_REVERSE_WEAK_DRIFT, DEFAULT_REVERSE_STRONG_DRIFT,
+				boundDuration(duration));
 	}
 
 	public boolean process(DataInputStream in, DataOutputStream out)
@@ -123,10 +130,10 @@ public class SRV1DirectMotorControlCommand extends SRV1Command {
 
 		// Verify unit recieved the request.
 		if ((char) in.readByte() == '#' && (char) in.readByte() == 'M') {
-			Log.d("SRV1", "Controlled motors!");
+			Log.d(SRV1Utils.TAG, "Controlled motors!");
 			return true;
 		}
-		Log.d("SRV1", "Could not control motors!");
+		Log.d(SRV1Utils.TAG, "Could not control motors!");
 		return false;
 
 	}

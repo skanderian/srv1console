@@ -58,10 +58,10 @@ public class SRV1Servo2Command extends SRV1Command {
 
 		// Verify unit recieved the request.
 		if ((char) in.readByte() == '#' && (char) in.readByte() == 's') {
-			Log.d("SRV1", "Controlled servo2 bank!");
+			Log.d(SRV1Utils.TAG, "Controlled servo2 bank!");
 			return true;
 		}
-		Log.d("SRV1", "Could not control servo2 bank!");
+		Log.d(SRV1Utils.TAG, "Could not control servo2 bank!");
 		return false;
 
 	}

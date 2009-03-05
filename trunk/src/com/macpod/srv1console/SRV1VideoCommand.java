@@ -33,6 +33,7 @@ public class SRV1VideoCommand extends SRV1Command {
 
 	private static final int IMAGE_SIZE_BYTE_COUNT = 4;
 
+	private boolean high_priority;
 	private int dataSize = 16000;
 	private byte[] data = new byte[dataSize];
 	private int tempSpaceSize = 16000;
@@ -40,8 +41,9 @@ public class SRV1VideoCommand extends SRV1Command {
 	private BitmapFactory.Options factory_options = new BitmapFactory.Options();
 	private SRV1VideoView video;
 
-	public SRV1VideoCommand(SRV1VideoView video) {
+	public SRV1VideoCommand(SRV1VideoView video, boolean high_priority) {
 		this.video = video;
+		this.high_priority = high_priority;
 		factory_options.inTempStorage = storage;
 		factory_options.inDither = false;
 		factory_options.inPreferredConfig = Config.RGB_565;
@@ -68,7 +70,7 @@ public class SRV1VideoCommand extends SRV1Command {
 		}
 
 		if (imageSize > dataSize) { // Bump up the size of our buffers if needed
-			Log.d("SRV1", "More video space has been requested.");
+			Log.d(SRV1Utils.TAG, "More video space has been requested.");
 			byte[] tempData = new byte[imageSize];
 			byte[] tempStorage = new byte[imageSize];
 
@@ -95,7 +97,7 @@ public class SRV1VideoCommand extends SRV1Command {
 	}
 
 	public boolean repeatOnFail() {
-		return false;
+		return high_priority;
 	}
 
 	private boolean goodHeader(DataInputStream in) throws Exception {

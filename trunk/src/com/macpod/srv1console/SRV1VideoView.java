@@ -72,17 +72,17 @@ public class SRV1VideoView extends SurfaceView implements
 	}
 
 	public void surfaceChanged(SurfaceHolder arg0, int arg1, int arg2, int arg3) {
-		//Log.d("SRV1", "Surface changed");
+		//Log.d(SRV1Utils.TAG, "Surface changed");
 	}
 
 	public void surfaceCreated(SurfaceHolder arg0) {
 		visible = true;
-		//Log.d("SRV1", "Surface is available");
+		//Log.d(SRV1Utils.TAG, "Surface is available");
 	}
 
 	public void surfaceDestroyed(SurfaceHolder arg0) {
 		visible = false;
-		//Log.d("SRV1", "Surface gone!");
+		//Log.d(SRV1Utils.TAG, "Surface gone!");
 	}
 
 }
