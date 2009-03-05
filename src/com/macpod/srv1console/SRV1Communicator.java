@@ -24,7 +24,6 @@ package com.macpod.srv1console;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.concurrent.BlockingQueue;
@@ -60,7 +59,7 @@ public class SRV1Communicator {
 	}
 
 	public void putCommand(SRV1Command command) {
-		if (communicator == null)
+		if (!connected())
 			return;
 		communicator.putCommand(command);
 	}
@@ -87,18 +86,18 @@ public class SRV1Communicator {
 						.getOutputStream());
 				DataInputStream in = new DataInputStream(connection
 						.getInputStream());
-				Log.d("SRV1", "Connection is up!");
+				Log.d(SRV1Utils.TAG, "Connection is up!");
 
 				while (true) { // Read and display images as fast as possible.
 					// Wait for, then take next command in queue.
 					SRV1Command command = commandQueue.take();
-					// Log.d("SRV1", "Running a command.");
+					// Log.d(SRV1Utils.TAG, "Running a command.");
 					// Run the command once, more if it needs to because it
 					// failed.
 					do {
 						results = command.process(in, out);
 					} while (results == false && command.repeatOnFail());
-					// Log.d("SRV1", "Done running a command");
+					// Log.d(SRV1Utils.TAG, "Done running a command");
 					// Add it back if it should be repeated.
 					if (command.repeat()) {
 						commandQueue.put(command);
@@ -133,6 +132,8 @@ public class SRV1Communicator {
 		}
 
 		public void putCommand(SRV1Command command) {
+			if (!connected())
+				return;
 			boolean retry = true;
 			while (retry) {
 				try {
@@ -173,17 +174,20 @@ public class SRV1Communicator {
 			if (connection == null)
 				return;
 			commandQueue.clear();
+
+			// Catch all exceptions because connection may be set to null if it
+			// was already disconnected.
 			try {
 				connection.shutdownInput();
-			} catch (IOException e) {
+			} catch (Exception e) {
 			}
 			try {
 				connection.shutdownOutput();
-			} catch (IOException e) {
+			} catch (Exception e) {
 			}
 			try {
 				connection.close();
-			} catch (IOException e) {
+			} catch (Exception e) {
 			}
 		}
 	}

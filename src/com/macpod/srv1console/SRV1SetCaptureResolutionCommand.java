@@ -55,10 +55,10 @@ public class SRV1SetCaptureResolutionCommand extends SRV1Command {
 
 		// Verify resolution was set.
 		if ((char) in.readByte() == '#' && (char) in.readByte() == resolution) {
-			Log.d("SRV1", "Set resolution OK!");
+			Log.d(SRV1Utils.TAG, "Set resolution OK!");
 			return true;
 		}
-		Log.d("SRV1", "Could not setup resolution!");
+		Log.d(SRV1Utils.TAG, "Could not setup resolution!");
 		return false;
 	}
 

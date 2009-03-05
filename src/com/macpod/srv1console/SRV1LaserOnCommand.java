@@ -33,10 +33,10 @@ public class SRV1LaserOnCommand extends SRV1Command {
 
 		// Verify lasers were turned on.
 		if ((char) in.readByte() == '#' && (char) in.readByte() == 'l') {
-			Log.d("SRV1", "Turned on lasers!");
+			Log.d(SRV1Utils.TAG, "Turned on lasers!");
 			return true;
 		}
-		Log.d("SRV1", "Could not on off lasers!");
+		Log.d(SRV1Utils.TAG, "Could not on off lasers!");
 		return false;
 	}
 

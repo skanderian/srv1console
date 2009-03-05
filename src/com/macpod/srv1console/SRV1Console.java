@@ -23,9 +23,6 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Bitmap;
-import android.graphics.Color;
-import android.graphics.drawable.GradientDrawable.Orientation;
 import android.hardware.SensorListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
@@ -40,7 +37,6 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.view.View.OnClickListener;
 import android.widget.Button;
-import android.widget.ImageView;
 
 import com.macpod.srv1console.SRV1SetCaptureResolutionCommand.CaptureResolution;
 import com.macpod.srv1console.SRV1VideoOrientationCommand.VideoOrientation;
@@ -88,8 +84,8 @@ public class SRV1Console extends Activity {
 		s2_2Button.setOnClickListener(s2_2ButtonListener);
 		s2_2Button.setFocusable(false);
 
-		updateInterface();
 		loadSettings();
+		updateInterface();
 	}
 
 	private static final int MAX_S1_PWM = SRV1Servo2Command.MAX_PWM; // Open
@@ -134,14 +130,14 @@ public class SRV1Console extends Activity {
 
 			command.setControls(curr_s1_pwm, curr_s2_pwm);
 			communicator.putCommand(command);
-			draw_servo_bars();
-			Log.d("SRV1", "Servo s1 pwm: " + curr_s1_pwm + " s2 pwm: "
+			update_servo_bars();
+			Log.d(SRV1Utils.TAG, "Servo s1 pwm: " + curr_s1_pwm + " s2 pwm: "
 					+ curr_s2_pwm);
 
 		}
 
 		if (MotionEvent.ACTION_DOWN == event.getAction()) {
-			Log.d("SRV1", "Trackball was clicked");
+			Log.d(SRV1Utils.TAG, "Trackball was clicked");
 		}
 
 		return true;
@@ -176,8 +172,10 @@ public class SRV1Console extends Activity {
 
 		public void onClick(View view) {
 			SRV1Servo2Command command = new SRV1Servo2Command();
-			command.setControls(MAX_S1_PWM, curr_s2_pwm);
+			curr_s1_pwm = MAX_S1_PWM;
+			command.setControls(curr_s1_pwm, curr_s2_pwm);
 			communicator.putCommand(command);
+			update_servo_bars();
 		}
 	};
 
@@ -185,8 +183,10 @@ public class SRV1Console extends Activity {
 
 		public void onClick(View view) {
 			SRV1Servo2Command command = new SRV1Servo2Command();
-			command.setControls(MIN_S1_PWM, curr_s2_pwm);
+			curr_s1_pwm = MIN_S1_PWM;
+			command.setControls(curr_s1_pwm, curr_s2_pwm);
 			communicator.putCommand(command);
+			update_servo_bars();
 		}
 	};
 
@@ -194,8 +194,10 @@ public class SRV1Console extends Activity {
 
 		public void onClick(View view) {
 			SRV1Servo2Command command = new SRV1Servo2Command();
-			command.setControls(curr_s1_pwm, MAX_S2_PWM);
+			curr_s2_pwm = MAX_S2_PWM;
+			command.setControls(curr_s1_pwm, curr_s2_pwm);
 			communicator.putCommand(command);
+			update_servo_bars();
 		}
 	};
 
@@ -203,13 +205,15 @@ public class SRV1Console extends Activity {
 
 		public void onClick(View view) {
 			SRV1Servo2Command command = new SRV1Servo2Command();
-			command.setControls(curr_s1_pwm, MIN_S2_PWM);
+			curr_s2_pwm = MIN_S2_PWM;
+			command.setControls(curr_s1_pwm, curr_s2_pwm);
 			communicator.putCommand(command);
+			update_servo_bars();
 		}
 	};
 
 	protected void onStop() {
-		Log.d("SRV1", "Stopping");
+		Log.d(SRV1Utils.TAG, "Stopping");
 		if (communicator != null)
 			communicator.disconnect();
 		updateInterface();
@@ -218,10 +222,6 @@ public class SRV1Console extends Activity {
 
 	protected static final int UPDATE_INTERFACE = 0;
 	protected static final int UPDATE_IMAGE = 2;
-
-	private int map(int x, int in_min, int in_max, int out_min, int out_max) {
-		return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
-	}
 
 	private Handler interface_handler = new Handler() {
 		public void handleMessage(Message msg) {
@@ -238,12 +238,20 @@ public class SRV1Console extends Activity {
 	public static final int DIR_REVERSE = 2;
 	public static final int DIR_RIGHT = 3;
 	public static final int DIR_LEFT = 4;
+
+	private static int xMinThreshold = 10; // Degrees
+	private static int yMinThreshold = 10;
+
+	// Used for advanced motion control.
+	private static int xMaxThreshold = 40; // Degrees
+	private static int yMaxThreshold = 40;
+
 	private SensorListener tilt = new SensorListener() {
 		// private static final int Z_ORIENTATION = 3;
 		private static final int Y_ORIENTATION = 4;
 		private static final int X_ORIENTATION = 5;
-
 		// int baseZ = Integer.MAX_VALUE;
+
 		// Screen facing up is 0
 		// tilting unit away from you while in landscape mode yields positive #s
 		// tilting unit towards you while in landscape mode yields negative #s
@@ -260,26 +268,19 @@ public class SRV1Console extends Activity {
 		private byte leftMotor = SRV1DirectMotorControlCommand.STOP_SPEED;
 		private byte rightMotor = SRV1DirectMotorControlCommand.STOP_SPEED;
 
-		private int xMinThreshold = 10; // Degrees
-		private int yMinThreshold = 10;
-
-		// Used for advanced motion control.
-		private int xMaxThreshold = 40; // Degrees
-		private int yMaxThreshold = 40;
-
 		private int motorTolerance = 5;
 
 		private int cheapSlowdown = 0;
 		private int cheapSlowdownIncrement = 5;
 
 		public void onAccuracyChanged(int sensor, int accuracy) {
-			Log.d("SRV1", "Sensor accuracty changed");
+			Log.d(SRV1Utils.TAG, "Sensor accuracty changed");
 		}
 
 		public void onSensorChanged(int sensor, float[] values) {
 			int xTilt, yTilt;
-			xTilt = (int) values[X_ORIENTATION];
-			yTilt = (int) values[Y_ORIENTATION];
+			xTilt = (int) values[X_ORIENTATION] - xBase;
+			yTilt = (int) values[Y_ORIENTATION] - yBase;
 
 			if (motion_mode == SRV1Settings.MOTION_CONTROL_ADVANCED) {
 				advancedReactionToTilt(xTilt, yTilt);
@@ -289,7 +290,6 @@ public class SRV1Console extends Activity {
 		}
 
 		public void advancedReactionToTilt(int xTilt, int yTilt) {
-			// int xBorder, yBorder;
 			int leftMotor = SRV1DirectMotorControlCommand.STOP_SPEED;
 			int rightMotor = SRV1DirectMotorControlCommand.STOP_SPEED;
 
@@ -303,20 +303,18 @@ public class SRV1Console extends Activity {
 			}
 			cheapSlowdown = cheapSlowdownIncrement;
 
-			if (xTilt > xBase + xMinThreshold) {
+			if (xTilt > xMinThreshold) {
 				// xBorder = DIR_FORWARD;
 				// Bound xTilt value.
-				xTilt = xTilt > xBase + xMaxThreshold ? xBase + xMaxThreshold
-						: xTilt;
-				leftMotor = rightMotor = (byte) map(xTilt - xBase,
+				xTilt = xTilt > xMaxThreshold ? xMaxThreshold : xTilt;
+				leftMotor = rightMotor = (byte) SRV1Utils.map(xTilt,
 						xMinThreshold, xMaxThreshold,
 						SRV1DirectMotorControlCommand.MIN_FORWARD_SPEED,
 						SRV1DirectMotorControlCommand.MAX_FORWARD_SPEED);
-			} else if (xTilt < xBase - xMinThreshold) {
+			} else if (xTilt < -xMinThreshold) {
 				// xBorder = DIR_REVERSE;
-				xTilt = xTilt < xBase - xMaxThreshold ? xBase - xMaxThreshold
-						: xTilt;
-				leftMotor = rightMotor = (byte) map(xTilt - xBase, -1
+				xTilt = xTilt < -xMaxThreshold ? -xMaxThreshold : xTilt;
+				leftMotor = rightMotor = (byte) SRV1Utils.map(xTilt, -1
 						* xMaxThreshold, -1 * xMinThreshold,
 						SRV1DirectMotorControlCommand.MAX_REVERSE_SPEED,
 						SRV1DirectMotorControlCommand.MIN_REVERSE_SPEED);
@@ -325,11 +323,11 @@ public class SRV1Console extends Activity {
 				leftMotor = SRV1DirectMotorControlCommand.STOP_SPEED;
 			}
 
-			if (yTilt > yBase + yMinThreshold) {
+			if (yTilt > yMinThreshold) {
 				// yBorder = DIR_LEFT;
-				yTilt = yTilt > yBase + yMaxThreshold ? yBase + yMaxThreshold
-						: yTilt;
-				temp = (byte) map(yTilt - yBase, yMinThreshold, yMaxThreshold,
+				yTilt = yTilt > yMaxThreshold ? yMaxThreshold : yTilt;
+				temp = (byte) SRV1Utils.map(yTilt, yMinThreshold,
+						yMaxThreshold,
 						SRV1DirectMotorControlCommand.MIN_FORWARD_SPEED,
 						SRV1DirectMotorControlCommand.MAX_FORWARD_SPEED);
 
@@ -341,11 +339,10 @@ public class SRV1Console extends Activity {
 					leftMotor -= temp;
 					rightMotor += temp;
 				}
-			} else if (yTilt < yBase - yMinThreshold) {
+			} else if (yTilt < -yMinThreshold) {
 				// yBorder = DIR_RIGHT;
-				yTilt = yTilt < yBase - yMaxThreshold ? yBase - yMaxThreshold
-						: yTilt;
-				temp = (byte) map(yTilt - yBase, -1 * yMaxThreshold, -1
+				yTilt = yTilt < -yMaxThreshold ? -yMaxThreshold : yTilt;
+				temp = (byte) SRV1Utils.map(yTilt, -1 * yMaxThreshold, -1
 						* yMinThreshold,
 						SRV1DirectMotorControlCommand.MAX_REVERSE_SPEED,
 						SRV1DirectMotorControlCommand.MIN_REVERSE_SPEED);
@@ -364,14 +361,12 @@ public class SRV1Console extends Activity {
 			}
 
 			// Adjust values to stay in ranges.
-			leftMotor = leftMotor > SRV1DirectMotorControlCommand.MAX_FORWARD_SPEED ? SRV1DirectMotorControlCommand.MAX_FORWARD_SPEED
-					: leftMotor < SRV1DirectMotorControlCommand.MAX_REVERSE_SPEED ? SRV1DirectMotorControlCommand.MAX_REVERSE_SPEED
-							: leftMotor;
-			rightMotor = rightMotor > SRV1DirectMotorControlCommand.MAX_FORWARD_SPEED ? SRV1DirectMotorControlCommand.MAX_FORWARD_SPEED
-					: rightMotor < SRV1DirectMotorControlCommand.MAX_REVERSE_SPEED ? SRV1DirectMotorControlCommand.MAX_REVERSE_SPEED
-							: rightMotor;
+			leftMotor = SRV1DirectMotorControlCommand
+					.boundMotorValue(leftMotor);
+			rightMotor = SRV1DirectMotorControlCommand
+					.boundMotorValue(rightMotor);
 
-			// Only continue if there is a significanct different sensor reading
+			// Only continue if there is a significant different sensor reading
 			// than last time.
 			if (this.leftMotor + motorTolerance >= leftMotor
 					&& leftMotor >= this.leftMotor - motorTolerance
@@ -383,29 +378,28 @@ public class SRV1Console extends Activity {
 			this.rightMotor = (byte) rightMotor;
 
 			// Draw the tilt border.
-			// drawTiltBorder(xBorder, yBorder); // commented out.. causing
-			// crashes?
+			updateTiltBorder(xTilt, yTilt);
 
 			// Send control to robot.
 			SRV1DirectMotorControlCommand command = new SRV1DirectMotorControlCommand();
 			command.setControls((byte) leftMotor, (byte) rightMotor,
 					SRV1DirectMotorControlCommand.INFINITE_DURATION);
 			communicator.putCommand(command);
-			Log.d("SRV1", "LeftMotor: " + leftMotor + " RightMotor: "
+			Log.d(SRV1Utils.TAG, "LeftMotor: " + leftMotor + " RightMotor: "
 					+ rightMotor);
 		}
 
 		public void simplereactToTilt(int xTilt, int yTilt) {
-			if (xTilt > xBase + xMinThreshold)
+			if (xTilt > xMinThreshold)
 				xTilt = DIR_FORWARD;
-			else if (xTilt < xBase - xMinThreshold)
+			else if (xTilt < -xMinThreshold)
 				xTilt = DIR_REVERSE;
 			else
 				xTilt = DIR_NONE;
 
-			if (yTilt > yBase + yMinThreshold)
+			if (yTilt > yMinThreshold)
 				yTilt = DIR_LEFT;
-			else if (yTilt < yBase - yMinThreshold)
+			else if (yTilt < -yMinThreshold)
 				yTilt = DIR_RIGHT;
 			else
 				yTilt = DIR_NONE;
@@ -421,43 +415,48 @@ public class SRV1Console extends Activity {
 			this.yTilt = yTilt;
 
 			// Draw the tilt border.
-			drawTiltBorder(xTilt, yTilt);
+			updateTiltBorder(xTilt, yTilt);
 
 			// Control the motors according to what thresholds we are in.
 			SRV1DirectMotorControlCommand command = new SRV1DirectMotorControlCommand();
 
-			drawTiltBorder(xTilt, yTilt);
+			updateTiltBorder(xTilt, yTilt);
 			if (xTilt == DIR_NONE && yTilt == DIR_RIGHT) {
-				Log.d("SRV1", "Right");
-				command.setRight(SRV1DirectMotorControlCommand.MAX_DURATION);
+				Log.d(SRV1Utils.TAG, "Right");
+				command
+						.setRight(SRV1DirectMotorControlCommand.INFINITE_DURATION);
 			} else if (xTilt == DIR_NONE && yTilt == DIR_LEFT) {
-				Log.d("SRV1", "Left");
-				command.setLeft(SRV1DirectMotorControlCommand.MAX_DURATION);
+				Log.d(SRV1Utils.TAG, "Left");
+				command
+						.setLeft(SRV1DirectMotorControlCommand.INFINITE_DURATION);
 			} else if (xTilt == DIR_FORWARD && yTilt == DIR_NONE) {
-				Log.d("SRV1", "Forward");
-				command.setForward(SRV1DirectMotorControlCommand.MAX_DURATION);
+				Log.d(SRV1Utils.TAG, "Forward");
+				command
+						.setForward(SRV1DirectMotorControlCommand.INFINITE_DURATION);
 			} else if (xTilt == DIR_FORWARD && yTilt == DIR_RIGHT) {
-				Log.d("SRV1", "Forward - right");
+				Log.d(SRV1Utils.TAG, "Forward - right");
 				command
-						.setForwardRightDrift(SRV1DirectMotorControlCommand.MAX_DURATION);
+						.setForwardRightDrift(SRV1DirectMotorControlCommand.INFINITE_DURATION);
 			} else if (xTilt == DIR_FORWARD && yTilt == DIR_LEFT) {
-				Log.d("SRV1", "Forward - left");
+				Log.d(SRV1Utils.TAG, "Forward - left");
 				command
-						.setForwardLeftDrift(SRV1DirectMotorControlCommand.MAX_DURATION);
+						.setForwardLeftDrift(SRV1DirectMotorControlCommand.INFINITE_DURATION);
 			} else if (xTilt == DIR_REVERSE && yTilt == DIR_NONE) {
-				Log.d("SRV1", "Reverse");
-				command.setReverse(SRV1DirectMotorControlCommand.MAX_DURATION);
+				Log.d(SRV1Utils.TAG, "Reverse");
+				command
+						.setReverse(SRV1DirectMotorControlCommand.INFINITE_DURATION);
 			} else if (xTilt == DIR_REVERSE && yTilt == DIR_RIGHT) {
-				Log.d("SRV1", "Reverse - right");
+				Log.d(SRV1Utils.TAG, "Reverse - right");
 				command
-						.setReverseRightDrift(SRV1DirectMotorControlCommand.MAX_DURATION);
+						.setReverseRightDrift(SRV1DirectMotorControlCommand.INFINITE_DURATION);
 			} else if (xTilt == DIR_REVERSE && yTilt == DIR_LEFT) {
-				Log.d("SRV1", "Reverse -left");
+				Log.d(SRV1Utils.TAG, "Reverse -left");
 				command
-						.setReverseLeftDrift(SRV1DirectMotorControlCommand.MAX_DURATION);
+						.setReverseLeftDrift(SRV1DirectMotorControlCommand.INFINITE_DURATION);
 			} else { // Lets assume they are stopping.
-				Log.d("SRV1", "Stopped");
-				command.setStop(SRV1DirectMotorControlCommand.MAX_DURATION);
+				Log.d(SRV1Utils.TAG, "Stopped");
+				command
+						.setStop(SRV1DirectMotorControlCommand.INFINITE_DURATION);
 			}
 
 			communicator.putCommand(command);
@@ -465,81 +464,107 @@ public class SRV1Console extends Activity {
 
 	};
 
-	// Everything about how this border is made is awful.
-	// It will be fixed when I have more time.
-	private void drawTiltBorder(int xTilt, int yTilt) {
+	private void updateTiltBorder(int xTilt, int yTilt) {
 
-		ImageView left_bar = (ImageView) findViewById(R.id.left_bar);
-		ImageView right_bar = (ImageView) findViewById(R.id.right_bar);
-		ImageView top_bar = (ImageView) findViewById(R.id.top_bar);
-		ImageView bottom_bar = (ImageView) findViewById(R.id.bottom_bar);
+		FloodBarView left_bar = (FloodBarView) findViewById(R.id.left_bar);
+		FloodBarView right_bar = (FloodBarView) findViewById(R.id.right_bar);
+		FloodBarView top_bar = (FloodBarView) findViewById(R.id.top_bar);
+		FloodBarView bottom_bar = (FloodBarView) findViewById(R.id.bottom_bar);
+		if (motion_mode == SRV1Settings.MOTION_CONTROL_ADVANCED) {
+			
 
-		Bitmap left_bar_bm = Bitmap.createBitmap(5, 480, Bitmap.Config.RGB_565);
-		Bitmap right_bar_bm = Bitmap
-				.createBitmap(5, 480, Bitmap.Config.RGB_565);
-		Bitmap top_bar_bm = Bitmap.createBitmap(640, 5, Bitmap.Config.RGB_565);
-		Bitmap bottom_bar_bm = Bitmap.createBitmap(640, 5,
-				Bitmap.Config.RGB_565);
+			// Bound and calculate percentages sent to flood bars.
+			int xPercent = Math.abs(xTilt);
+			int yPercent = Math.abs(yTilt);
+			if (xPercent <= xMinThreshold)
+				xPercent = 0;
+			if (yPercent <= yMinThreshold)
+				yPercent = 0;
 
-		left_bar_bm.eraseColor(yTilt == DIR_LEFT ? Color.RED : Color.BLACK);
-		right_bar_bm.eraseColor(yTilt == DIR_RIGHT ? Color.RED : Color.BLACK);
-		top_bar_bm.eraseColor(xTilt == DIR_FORWARD ? Color.RED : Color.BLACK);
-		bottom_bar_bm
-				.eraseColor(xTilt == DIR_REVERSE ? Color.RED : Color.BLACK);
+			if (xPercent >= xMaxThreshold)
+				xPercent = xMaxThreshold;
+			if (yPercent >= yMaxThreshold)
+				yPercent = yMaxThreshold;
 
-		left_bar.setImageBitmap(left_bar_bm);
-		right_bar.setImageBitmap(right_bar_bm);
-		top_bar.setImageBitmap(top_bar_bm);
-		bottom_bar.setImageBitmap(bottom_bar_bm);
-	}
+			xPercent = SRV1Utils.map(xPercent, 0, xMaxThreshold,
+					FloodBarView.MIN_PERCENT, FloodBarView.MAX_PERCENT);
+			yPercent = SRV1Utils.map(yPercent, 0, yMaxThreshold,
+					FloodBarView.MIN_PERCENT, FloodBarView.MAX_PERCENT);
+			
+			// Draw the flood bars
+			if (xTilt > 0) { // Forwards
+				top_bar.setPercent(xPercent);
+				bottom_bar.setPercent(FloodBarView.MIN_PERCENT);
+			} else if (xTilt < 0) {// Reverse
+				top_bar.setPercent(FloodBarView.MIN_PERCENT);
+				bottom_bar.setPercent(xPercent);
+			} else { // Not moving forwards/reverse
+				top_bar.setPercent(FloodBarView.MIN_PERCENT);
+				bottom_bar.setPercent(FloodBarView.MIN_PERCENT);
 
-	// This method is just as ugly as the drawtiltborder.. it will be fixed
-	private void draw_servo_bars() {
-		ImageView s1_servo_bar = (ImageView) findViewById(R.id.s1_servo_bar);
-		ImageView s2_servo_bar = (ImageView) findViewById(R.id.s2_servo_bar);
-
-		int s1_pos = map(curr_s1_pwm, MIN_S1_PWM, MAX_S1_PWM, 0, 316);
-		int s2_pos = map(curr_s2_pwm, MIN_S2_PWM, MAX_S2_PWM, 0, 236);
-
-		Bitmap s1_bm = Bitmap.createBitmap(320, 5, Bitmap.Config.RGB_565);
-		Bitmap s2_bm = Bitmap.createBitmap(5, 240, Bitmap.Config.RGB_565);
-
-		for (int i = 0; i < 4; i++) {
-			s1_bm.setPixel(s1_pos + i, 0, Color.RED);
-			s1_bm.setPixel(s1_pos + i, 1, Color.RED);
-			s1_bm.setPixel(s1_pos + i, 2, Color.RED);
-			s1_bm.setPixel(s1_pos + i, 3, Color.RED);
-			s1_bm.setPixel(s1_pos + i, 4, Color.RED);
-
-			s2_bm.setPixel(0, s2_pos + i, Color.RED);
-			s2_bm.setPixel(1, s2_pos + i, Color.RED);
-			s2_bm.setPixel(2, s2_pos + i, Color.RED);
-			s2_bm.setPixel(3, s2_pos + i, Color.RED);
-			s2_bm.setPixel(4, s2_pos + i, Color.RED);
+			}
+			
+			if (yTilt > 0) { // Left
+				left_bar.setPercent(yPercent);
+				right_bar.setPercent(FloodBarView.MIN_PERCENT);
+			} else if (yTilt < 0) {// Right
+				left_bar.setPercent(FloodBarView.MIN_PERCENT);
+				right_bar.setPercent(yPercent);
+			} else { // Not moving left/right
+				left_bar.setPercent(FloodBarView.MIN_PERCENT);
+				right_bar.setPercent(FloodBarView.MIN_PERCENT);
+			}
+		} else {
+			left_bar.setPercent(yTilt == DIR_LEFT ? FloodBarView.MAX_PERCENT
+					: FloodBarView.MIN_PERCENT);
+			right_bar.setPercent(yTilt == DIR_RIGHT ? FloodBarView.MAX_PERCENT
+					: FloodBarView.MIN_PERCENT);
+			top_bar.setPercent(xTilt == DIR_FORWARD ? FloodBarView.MAX_PERCENT
+					: FloodBarView.MIN_PERCENT);
+			bottom_bar
+					.setPercent(xTilt == DIR_REVERSE ? FloodBarView.MAX_PERCENT
+							: FloodBarView.MIN_PERCENT);
 		}
 
-		s1_servo_bar.setImageBitmap(s1_bm);
-		s2_servo_bar.setImageBitmap(s2_bm);
+	}
+
+	private void update_servo_bars() {
+		ScaleBarView s1_servo_bar = (ScaleBarView) findViewById(R.id.s1_servo_bar);
+		ScaleBarView s2_servo_bar = (ScaleBarView) findViewById(R.id.s2_servo_bar);
+		Log.d(SRV1Utils.TAG, "dooooo");
+		int s1_percent = SRV1Utils.map(curr_s1_pwm, MIN_S1_PWM, MAX_S1_PWM,
+				ScaleBarView.MIN_PERCENT, ScaleBarView.MAX_PERCENT);
+		int s2_percent = SRV1Utils.map(curr_s2_pwm, MIN_S2_PWM, MAX_S2_PWM,
+				ScaleBarView.MIN_PERCENT, ScaleBarView.MAX_PERCENT);
+
+		s1_servo_bar.setPercent(s1_percent);
+		s2_servo_bar.setPercent(s2_percent);
 	}
 
 	public void updateInterface() {
+		ScaleBarView s1_servo_bar = (ScaleBarView) findViewById(R.id.s1_servo_bar);
+		ScaleBarView s2_servo_bar = (ScaleBarView) findViewById(R.id.s2_servo_bar);
 		Menu menu = getOptionsMenu();
 		if (menu == null)
 			return;
 		if (communicator == null || !communicator.connected()) {
 			((SensorManager) getSystemService(SENSOR_SERVICE))
 					.unregisterListener(tilt);
-			Log.d("SRV1", "DISCONNECTED");
+			Log.d(SRV1Utils.TAG, "Disconnected");
 			menu.findItem(CONNECT_MENU_ITEM).setEnabled(true);
 			menu.findItem(DISCONNECT_MENU_ITEM).setEnabled(false);
-			drawTiltBorder(DIR_NONE, DIR_NONE);
+			s1_servo_bar.setDisabled(true);
+			s2_servo_bar.setDisabled(true);
+			updateTiltBorder(DIR_NONE, DIR_NONE);
 		} else {
-			Log.d("SRV1", "connected");
+			Log.d(SRV1Utils.TAG, "Connected");
 			menu.findItem(CONNECT_MENU_ITEM).setEnabled(false);
 			menu.findItem(DISCONNECT_MENU_ITEM).setEnabled(true);
 			((SensorManager) getSystemService(SENSOR_SERVICE))
 					.registerListener(tilt, SensorManager.SENSOR_ORIENTATION,
 							SensorManager.SENSOR_DELAY_GAME);
+			s1_servo_bar.setDisabled(false);
+			s2_servo_bar.setDisabled(false);
 		}
 	}
 
@@ -597,7 +622,7 @@ public class SRV1Console extends Activity {
 						CaptureResolution.RES320x240));
 				commandQueue.put(new SRV1VideoOrientationCommand(
 						VideoOrientation.NORMAL_ORIENTATION));
-				commandQueue.put(new SRV1VideoCommand(video));
+				commandQueue.put(new SRV1VideoCommand(video, false));
 				// Connect
 				if (!communicator.connect(data.getStringExtra("server"),
 						interface_handler, commandQueue)) {
