@@ -52,6 +52,8 @@ public class SRV1SetCaptureResolutionCommand extends SRV1Command {
 
 		// Write a byte to set the resolution
 		out.writeByte('b');
+		
+		out.flush();
 
 		// Verify resolution was set.
 		if ((char) in.readByte() == '#' && (char) in.readByte() == resolution) {

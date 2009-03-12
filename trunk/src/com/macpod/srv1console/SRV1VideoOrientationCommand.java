@@ -33,6 +33,8 @@ public class SRV1VideoOrientationCommand extends SRV1Command {
 		// Write a byte to orient video capture.
 		out.writeByte(orientation);
 
+		out.flush();
+		
 		// Verify video capture orientation was set.
 		if ((char) in.readByte() == '#' && (char) in.readByte() == orientation) {
 			Log.d(SRV1Utils.TAG, "Set video orientation!");

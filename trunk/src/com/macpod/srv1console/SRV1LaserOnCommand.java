@@ -31,6 +31,8 @@ public class SRV1LaserOnCommand extends SRV1Command {
 		// Write a byte to turn the lasers on.
 		out.writeByte('l');
 
+		out.flush();
+		
 		// Verify lasers were turned on.
 		if ((char) in.readByte() == '#' && (char) in.readByte() == 'l') {
 			Log.d(SRV1Utils.TAG, "Turned on lasers!");

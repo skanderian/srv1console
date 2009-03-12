@@ -55,6 +55,8 @@ public class SRV1Servo2Command extends SRV1Command {
 		out.writeByte(leftServo);
 		// Write right Servo byte
 		out.writeByte(rightServo);
+		
+		out.flush();
 
 		// Verify unit recieved the request.
 		if ((char) in.readByte() == '#' && (char) in.readByte() == 's') {

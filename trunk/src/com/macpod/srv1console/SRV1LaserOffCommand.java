@@ -30,6 +30,8 @@ public class SRV1LaserOffCommand extends SRV1Command {
 
 		// Write a byte to turn the lasers on.
 		out.writeByte('L');
+		
+		out.flush();
 
 		// Verify lasers were turned off was set.
 		if ((char) in.readByte() == '#' && (char) in.readByte() == 'L') {
