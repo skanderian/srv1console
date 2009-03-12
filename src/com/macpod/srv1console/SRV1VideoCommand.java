@@ -51,33 +51,47 @@ public class SRV1VideoCommand extends SRV1Command {
 
 	public boolean process(DataInputStream in, DataOutputStream out)
 			throws Exception {
+		Log.d(SRV1Utils.TAG, "++Video");
 
 		// Clear input stream in case there is data present.
 		clearInputStream(in);
 
 		// Request an image frame.
-		while (in.available() == 0) {
-			out.writeByte('I');
-		}
+		out.writeByte('I');
+		out.flush();
 
-		if (!goodHeader(in))
-			return false;
+		while (true) {
+			if (goodHeaderSize(in)) {
+				if (goodHeader(in)) {
+					break;
+				}
+			}
+		}
 
 		int imageSize = readImageSize(in);
 
 		if (imageSize <= 0) { // Make sure it is a sane image size.
+			Log.d(SRV1Utils.TAG, "!!Bad size");
 			return false;
 		}
 
 		if (imageSize > dataSize) { // Bump up the size of our buffers if needed
 			Log.d(SRV1Utils.TAG, "More video space has been requested.");
-			byte[] tempData = new byte[imageSize];
-			byte[] tempStorage = new byte[imageSize];
-
-			if (tempData == null || tempStorage == null) {
+			byte[] tempData;
+			byte[] tempStorage;
+			try {
+				tempData = new byte[imageSize];
+				tempStorage = new byte[imageSize];
+			} catch (Exception e) {
 				// Assume size was bogus (and that we didn't run out of memory)
+				Log.d(SRV1Utils.TAG, "!!Bogus size - exception");
+				return false;
+			} catch (Error e) {
+				// Assume size was bogus (and that we didn't run out of memory)
+				Log.d(SRV1Utils.TAG, "!!Bogus size  - error");
 				return false;
 			}
+
 			data = tempData;
 			storage = tempStorage;
 		}
@@ -88,7 +102,7 @@ public class SRV1VideoCommand extends SRV1Command {
 		// Display image.
 		video.putFrame(BitmapFactory.decodeByteArray(data, 0, imageSize,
 				factory_options));
-
+		Log.d(SRV1Utils.TAG, "--End video");
 		return true;
 	}
 
@@ -98,6 +112,10 @@ public class SRV1VideoCommand extends SRV1Command {
 
 	public boolean repeatOnFail() {
 		return high_priority;
+	}
+
+	private boolean goodHeaderSize(DataInputStream in) throws Exception {
+		return in.available() >= JPEG_HEADER_COUNT;
 	}
 
 	private boolean goodHeader(DataInputStream in) throws Exception {

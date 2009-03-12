@@ -56,6 +56,8 @@ public class SRV1Servo1Command extends SRV1Command {
 		// Write right Servo byte
 		out.writeByte(rightServo);
 
+		out.flush();
+		
 		// Verify unit recieved the request.
 		if ((char) in.readByte() == '#' && (char) in.readByte() == 'S') {
 			Log.d(SRV1Utils.TAG, "Controlled servo1 bank!");

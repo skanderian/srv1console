@@ -128,6 +128,8 @@ public class SRV1DirectMotorControlCommand extends SRV1Command {
 		// Write duration byte
 		out.writeByte(duration);
 
+		out.flush();
+		
 		// Verify unit recieved the request.
 		if ((char) in.readByte() == '#' && (char) in.readByte() == 'M') {
 			Log.d(SRV1Utils.TAG, "Controlled motors!");
