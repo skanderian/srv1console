@@ -31,6 +31,8 @@ public class SRV1VideoCommand extends SRV1Command {
 	private static final char JPEG_HEADER_5 = 'J';
 	private static final char JPEG_HEADER_6 = '5';
 
+	private static final int MAX_WAIT_MS = 500;
+
 	private static final int IMAGE_SIZE_BYTE_COUNT = 4;
 
 	private boolean high_priority;
@@ -51,7 +53,7 @@ public class SRV1VideoCommand extends SRV1Command {
 
 	public boolean process(DataInputStream in, DataOutputStream out)
 			throws Exception {
-		Log.d(SRV1Utils.TAG, "++Video");
+		// Log.d(SRV1Utils.TAG, "++Video");
 
 		// Clear input stream in case there is data present.
 		clearInputStream(in);
@@ -60,12 +62,23 @@ public class SRV1VideoCommand extends SRV1Command {
 		out.writeByte('I');
 		out.flush();
 
-		while (true) {
-			if (goodHeaderSize(in)) {
-				if (goodHeader(in)) {
-					break;
-				}
+		double timeStart = System.currentTimeMillis();
+
+		while (!goodHeaderSize(in)) {
+			double timeEnd = System.currentTimeMillis();
+
+			// Make sure we don't wait too long for a frame header.
+			if (timeEnd - timeStart > MAX_WAIT_MS) {
+				Log.d(SRV1Utils.TAG, "!!Waited too long for frame: "
+						+ (timeEnd - timeStart));
+				return false;
 			}
+		}
+
+		// Wipe out the data on the socket if the header was bad.
+		if (!goodHeader(in)) {
+			clearInputStream(in);
+			return false;
 		}
 
 		int imageSize = readImageSize(in);
@@ -102,7 +115,7 @@ public class SRV1VideoCommand extends SRV1Command {
 		// Display image.
 		video.putFrame(BitmapFactory.decodeByteArray(data, 0, imageSize,
 				factory_options));
-		Log.d(SRV1Utils.TAG, "--End video");
+		// Log.d(SRV1Utils.TAG, "--End video");
 		return true;
 	}
 
