@@ -18,6 +18,8 @@ package com.macpod.srv1console;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -26,16 +28,25 @@ public class SRV1VideoView extends SurfaceView implements
 		SurfaceHolder.Callback {
 
 	private SurfaceHolder holder;
-	boolean visible;
+	private boolean visible = false;
+	private boolean connected = false;
+	private Paint paint = new Paint();
 
 	public SRV1VideoView(Context context, AttributeSet attrs) {
 		super(context, attrs);
 		holder = getHolder();
 		holder.addCallback(this);
 		visible = false;
+		paint.setColor(Color.RED);
+		paint.setTextAlign(Paint.Align.CENTER);
 	}
 
 	private Bitmap frame = null;
+
+	public void setConnected(boolean connected) {
+		this.connected = connected;
+		prepareDraw();
+	}
 
 	public void putFrame(Bitmap frame) {
 		Bitmap temp;
@@ -47,6 +58,12 @@ public class SRV1VideoView extends SurfaceView implements
 		if (temp != null)
 			temp.recycle();
 
+		this.connected = true;
+
+		prepareDraw();
+	}
+
+	public void prepareDraw() {
 		if (!visible)
 			return;
 
@@ -68,21 +85,43 @@ public class SRV1VideoView extends SurfaceView implements
 	}
 
 	protected void onDraw(Canvas canvas) {
-		canvas.drawBitmap(frame, 0, 0, null);
+		if (connected) {
+			// Draw the video frame if it is present.
+			if (frame != null) {
+				canvas.drawBitmap(frame, 0, 0, null);
+			} else {
+				canvas.drawColor(Color.BLACK);
+			}
+			return;
+		}
+
+		canvas.drawColor(Color.BLACK);
+
+		int width = canvas.getWidth();
+		int height = canvas.getHeight();
+
+		// Draw disconnected text in the center of the screen.
+		paint.setAntiAlias(true);
+		paint.setTextSize(24);
+
+		canvas.drawText(getContext().getString(R.string.disconnected),
+				width / 2, height / 2, paint);
 	}
 
 	public void surfaceChanged(SurfaceHolder arg0, int arg1, int arg2, int arg3) {
-		//Log.d(SRV1Utils.TAG, "Surface changed");
+		// Log.d(SRV1Utils.TAG, "Surface changed");
 	}
 
 	public void surfaceCreated(SurfaceHolder arg0) {
 		visible = true;
-		//Log.d(SRV1Utils.TAG, "Surface is available");
+		// Log.d(SRV1Utils.TAG, "Surface is available");
+		// Update the interface now.
+		prepareDraw();
 	}
 
 	public void surfaceDestroyed(SurfaceHolder arg0) {
 		visible = false;
-		//Log.d(SRV1Utils.TAG, "Surface gone!");
+		// Log.d(SRV1Utils.TAG, "Surface gone!");
 	}
 
 }

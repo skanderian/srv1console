@@ -471,7 +471,6 @@ public class SRV1Console extends Activity {
 		FloodBarView top_bar = (FloodBarView) findViewById(R.id.top_bar);
 		FloodBarView bottom_bar = (FloodBarView) findViewById(R.id.bottom_bar);
 		if (motion_mode == SRV1Settings.MOTION_CONTROL_ADVANCED) {
-			
 
 			// Bound and calculate percentages sent to flood bars.
 			int xPercent = Math.abs(xTilt);
@@ -490,7 +489,7 @@ public class SRV1Console extends Activity {
 					FloodBarView.MIN_PERCENT, FloodBarView.MAX_PERCENT);
 			yPercent = SRV1Utils.map(yPercent, 0, yMaxThreshold,
 					FloodBarView.MIN_PERCENT, FloodBarView.MAX_PERCENT);
-			
+
 			// Draw the flood bars
 			if (xTilt > 0) { // Forwards
 				top_bar.setPercent(xPercent);
@@ -503,7 +502,7 @@ public class SRV1Console extends Activity {
 				bottom_bar.setPercent(FloodBarView.MIN_PERCENT);
 
 			}
-			
+
 			if (yTilt > 0) { // Left
 				left_bar.setPercent(yPercent);
 				right_bar.setPercent(FloodBarView.MIN_PERCENT);
@@ -531,7 +530,6 @@ public class SRV1Console extends Activity {
 	private void update_servo_bars() {
 		ScaleBarView s1_servo_bar = (ScaleBarView) findViewById(R.id.s1_servo_bar);
 		ScaleBarView s2_servo_bar = (ScaleBarView) findViewById(R.id.s2_servo_bar);
-		Log.d(SRV1Utils.TAG, "dooooo");
 		int s1_percent = SRV1Utils.map(curr_s1_pwm, MIN_S1_PWM, MAX_S1_PWM,
 				ScaleBarView.MIN_PERCENT, ScaleBarView.MAX_PERCENT);
 		int s2_percent = SRV1Utils.map(curr_s2_pwm, MIN_S2_PWM, MAX_S2_PWM,
@@ -551,6 +549,8 @@ public class SRV1Console extends Activity {
 			((SensorManager) getSystemService(SENSOR_SERVICE))
 					.unregisterListener(tilt);
 			Log.d(SRV1Utils.TAG, "Disconnected");
+			SRV1VideoView video = (SRV1VideoView) findViewById(R.id.video_view);
+			video.setConnected(false);
 			menu.findItem(CONNECT_MENU_ITEM).setEnabled(true);
 			menu.findItem(DISCONNECT_MENU_ITEM).setEnabled(false);
 			s1_servo_bar.setDisabled(true);
@@ -558,6 +558,8 @@ public class SRV1Console extends Activity {
 			updateTiltBorder(DIR_NONE, DIR_NONE);
 		} else {
 			Log.d(SRV1Utils.TAG, "Connected");
+			SRV1VideoView video = (SRV1VideoView) findViewById(R.id.video_view);
+			video.setConnected(true);
 			menu.findItem(CONNECT_MENU_ITEM).setEnabled(false);
 			menu.findItem(DISCONNECT_MENU_ITEM).setEnabled(true);
 			((SensorManager) getSystemService(SENSOR_SERVICE))
