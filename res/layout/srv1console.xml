@@ -8,22 +8,23 @@
     
 	<com.macpod.srv1console.SRV1VideoView android:id="@+id/video_view"
 		android:layout_width="320px"
-        android:layout_height="240px"
+        android:layout_height="240px" 
+        android:layout_centerHorizontal="true" 
         android:layout_centerInParent="true"/>
 
     <com.macpod.srv1console.ScaleBarView android:id="@+id/s1_servo_bar"
 		android:layout_height="240px"
 		android:layout_width="5px"
 		android:layout_centerInParent="true"
-		android:layout_toRightOf="@id/video_view"/>
-		
-
-    <com.macpod.srv1console.ScaleBarView android:id="@+id/s2_servo_bar"
-		android:layout_width="320px"
-		android:layout_height="5px"
-		android:layout_centerInParent="true"
-		android:layout_below="@id/video_view"/>			
+		android:layout_toRightOf="@+id/video_view"/>
 		        
+    <com.macpod.srv1console.ScaleBarView android:id="@+id/s2_servo_bar" 
+    	android:layout_width="320px" 
+    	android:layout_height="5px" 
+    	android:layout_centerHorizontal="true" 
+    	android:layout_below="@+id/video_view" 
+    	android:layout_marginTop="40px"/>
+    	
     <com.macpod.srv1console.FloodBarView android:id="@+id/left_bar"
 		android:layout_width="5px"
 		android:layout_height="480px"		
@@ -49,13 +50,13 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true" 
-        android:text="LaserOn"/>
+        android:text="LaserOn" android:layout_below="@+id/top_bar"/>
      <Button
         android:id="@+id/laser_off_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true" 
-        android:text="LaserOff"/>     
+        android:text="LaserOff" android:layout_below="@+id/top_bar"/>     
         
      <Button
         android:id="@+id/s1_1_button"
